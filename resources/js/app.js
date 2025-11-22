@@ -58,7 +58,6 @@ let cart = [];
 let orders = []; 
 let currentUser = null;
 let currentCategory = 'All';
-let orderToCancelId = null;
 let currentModalQty = 1; 
 
 // --- Init ---
@@ -291,60 +290,9 @@ window.logout = function() {
 
 // --- Payment Logic ---
 window.openPaymentModal = function() {
-    showPaymentStep(1);
-    const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-    document.getElementById('payment-total-display').innerText = formatCurrency(total);
-    
-    const modal = document.getElementById('payment-modal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    toggleCart();
-};
-
-window.closePaymentModal = function() {
-    const modal = document.getElementById('payment-modal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-};
-
-function showPaymentStep(step) {
-    document.getElementById('payment-step-1').classList.add('hidden');
-    document.getElementById('payment-step-2').classList.add('hidden');
-    document.getElementById('payment-step-3').classList.add('hidden');
-    
-    document.getElementById('payment-step-' + step).classList.remove('hidden');
-    
-    if(step === 1) document.getElementById('payment-modal-title').innerText = "Payment Method";
-    if(step === 2) document.getElementById('payment-modal-title').innerText = "Order Confirmation";
-    if(step === 3) document.getElementById('payment-modal-title').innerText = "Complete Payment";
-}
-
-window.goToPaymentStep2 = function() {
-    const container = document.getElementById('payment-summary-items');
-    let html = '';
-    let total = 0;
-    cart.forEach(item => {
-        const itemTotal = item.price * item.qty;
-        total += itemTotal;
-        html += `
-        <div class="flex justify-between text-gray-600 dark:text-gray-300">
-            <span>${item.qty}x ${item.name}</span>
-            <span>${formatCurrency(itemTotal)}</span>
-        </div>`;
-    });
-    container.innerHTML = html;
-    document.getElementById('payment-summary-total').innerText = formatCurrency(total);
-    
-    const method = document.querySelector('input[name="payment_method"]:checked').value;
-    document.getElementById('payment-summary-method').innerText = method.toUpperCase();
-    
-    showPaymentStep(2);
-};
-
-window.goToPaymentStep3 = function() {
     const method = document.querySelector('input[name="payment_method"]:checked').value;
     
+    // Show appropriate payment view
     document.getElementById('payment-view-qr').classList.add('hidden');
     document.getElementById('payment-view-qr').classList.remove('flex');
     document.getElementById('payment-view-card').classList.add('hidden');
@@ -361,7 +309,17 @@ window.goToPaymentStep3 = function() {
         setTimeout(() => document.getElementById('ewallet-phone').focus(), 100);
     }
     
-    showPaymentStep(3);
+    const modal = document.getElementById('payment-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    toggleCart();
+};
+
+window.closePaymentModal = function() {
+    const modal = document.getElementById('payment-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 };
 
 window.formatExpiry = function(input) {
@@ -573,20 +531,45 @@ function renderMenu() {
         return;
     }
 
-    grid.innerHTML = itemsToRender.map(item => `
-        <div onclick="openProductDetail(${item.id})" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 flex flex-col border border-gray-100 dark:border-gray-700 cursor-pointer group">
-            <div class="h-40 rounded-xl ${item.image.split(' ').slice(1).join(' ')} flex items-center justify-center mb-4 text-5xl transform group-hover:scale-110 transition-transform duration-300">
-                <i class="fas ${item.image.split(' ')[3]} ${item.image.split(' ')[0]}"></i>
-            </div>
-            <div class="flex justify-between items-start">
-                <div>
-                    <span class="text-xs text-orange-500 dark:text-orange-400 font-bold uppercase tracking-wider">${item.category}</span>
-                    <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight mt-1">${item.name}</h3>
+    grid.innerHTML = itemsToRender.map(item => {
+        const cartItem = cart.find(c => c.id === item.id);
+        const inCart = cartItem ? cartItem.qty : 0;
+        
+        return `
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-5 flex flex-col border border-gray-100 dark:border-gray-700 group relative">
+            <div onclick="openProductDetail(${item.id})" class="cursor-pointer">
+                <div class="h-40 rounded-xl ${item.image.split(' ').slice(1).join(' ')} flex items-center justify-center mb-4 text-5xl transform group-hover:scale-110 transition-transform duration-300">
+                    <i class="fas ${item.image.split(' ')[3]} ${item.image.split(' ')[0]}"></i>
                 </div>
-                <span class="font-extrabold text-lg text-gray-900 dark:text-white">${formatCurrency(item.price)}</span>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="text-xs text-orange-500 dark:text-orange-400 font-bold uppercase tracking-wider">${item.category}</span>
+                        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100 leading-tight mt-1">${item.name}</h3>
+                    </div>
+                    <span class="font-extrabold text-lg text-gray-900 dark:text-white">${formatCurrency(item.price)}</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                ${inCart === 0 ? `
+                    <button onclick="addToCartFromMenu(${item.id})" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                ` : `
+                    <div class="flex items-center gap-2">
+                        <button onclick="decreaseFromMenu(${item.id})" class="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 text-gray-600 dark:text-gray-300 font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <div class="flex-1 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-bold py-2.5 rounded-lg flex items-center justify-center border-2 border-orange-200 dark:border-orange-800">
+                            ${inCart}
+                        </div>
+                        <button onclick="increaseFromMenu(${item.id})" class="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400 text-gray-600 dark:text-gray-300 font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                `}
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 window.openProductDetail = function(id) {
@@ -650,18 +633,85 @@ function addToCart(id, quantity = 1) {
     updateCartUI();
 }
 
+window.addToCartFromMenu = function(id) {
+    const item = menuItems.find(i => i.id === id);
+    if (item) {
+        addToCart(id, 1);
+        renderMenu();
+        showToast(`${item.name} added to tray`);
+    }
+};
+
+window.increaseFromMenu = function(id) {
+    updateCartQty(id, 1);
+    renderMenu();
+};
+
+window.decreaseFromMenu = function(id) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+        if (item.qty === 1) {
+            // Directly remove without confirmation
+            removeFromCart(id);
+        } else {
+            item.qty -= 1;
+            updateCartUI();
+        }
+        renderMenu();
+    }
+};
+
 function removeFromCart(id) {
     cart = cart.filter(i => i.id !== id);
     updateCartUI();
 }
 
+// Global variables for confirmation modal
+let confirmAction = null;
+let itemToRemove = null;
+let orderToCancelId = null;
+
 window.updateCartQty = function(id, change) {
     const item = cart.find(i => i.id === id);
     if (item) {
-        item.qty += change;
-        if (item.qty <= 0) removeFromCart(id);
-        else updateCartUI();
+        if (change < 0 && item.qty === 1) {
+            // Show confirmation before removing
+            itemToRemove = id;
+            confirmAction = 'removeItem';
+            document.getElementById('confirm-title').innerText = 'Remove Item?';
+            document.getElementById('confirm-message').innerText = `Are you sure you want to remove ${item.name} from your tray?`;
+            document.getElementById('confirm-icon').className = 'fas fa-trash text-red-600 dark:text-red-400 text-xl';
+            document.getElementById('confirm-modal').classList.remove('hidden');
+            document.getElementById('confirm-modal').classList.add('flex');
+        } else {
+            item.qty += change;
+            updateCartUI();
+        }
     }
+};
+
+window.closeConfirmModal = function() {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    document.getElementById('confirm-modal').classList.remove('flex');
+    confirmAction = null;
+    itemToRemove = null;
+    orderToCancelId = null;
+};
+
+window.proceedConfirm = function() {
+    if (confirmAction === 'removeItem' && itemToRemove) {
+        removeFromCart(itemToRemove);
+        renderMenu(); // Update menu to show + button again
+        showToast('Item removed from tray');
+    } else if (confirmAction === 'cancelOrder' && orderToCancelId) {
+        const order = orders.find(o => o.id === orderToCancelId);
+        if(order) {
+            order.status = 'cancelled';
+            renderHistory();
+            showToast('Order Cancelled');
+        }
+    }
+    closeConfirmModal();
 };
 
 function updateCartUI() {
@@ -670,21 +720,36 @@ function updateCartUI() {
     const mobileCount = document.getElementById('mobile-cart-count');
     const pickupSelect = document.getElementById('pickup-time');
     
+    // Show/hide sections based on cart content
+    const paymentSection = document.getElementById('payment-method-section');
+    const noteSection = document.getElementById('note-section');
+    const pickupSection = document.getElementById('pickup-section');
+    const summarySection = document.getElementById('summary-section');
+    
     const totalQty = cart.reduce((acc, i) => acc + i.qty, 0);
     if(totalQty > 0) {
         mobileCount.innerText = totalQty;
         mobileCount.classList.remove('hidden');
+        paymentSection.classList.remove('hidden');
+        noteSection.classList.remove('hidden');
+        pickupSection.classList.remove('hidden');
+        summarySection.classList.remove('hidden');
     } else {
         mobileCount.classList.add('hidden');
+        paymentSection.classList.add('hidden');
+        noteSection.classList.add('hidden');
+        pickupSection.classList.add('hidden');
+        summarySection.classList.add('hidden');
     }
 
     if (cart.length === 0) {
         container.innerHTML = `
-            <div id="empty-cart-msg" class="text-center text-gray-300 dark:text-gray-600 mt-20 flex flex-col items-center">
-                <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-full mb-4">
-                    <i class="fas fa-basket-shopping text-4xl"></i>
+            <div id="empty-cart-msg" class="text-center text-gray-300 dark:text-gray-600 py-8 flex flex-col items-center">
+                <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-full mb-3">
+                    <i class="fas fa-basket-shopping text-3xl"></i>
                 </div>
                 <p class="font-medium">Your tray is empty</p>
+                <p class="text-xs mt-1">Add some delicious food!</p>
             </div>`;
         checkoutBtn.disabled = true;
         document.getElementById('cart-total').innerText = formatCurrency(0);
@@ -695,12 +760,12 @@ function updateCartUI() {
     const isClosed = pickupSelect.options.length > 0 && pickupSelect.options[0].disabled;
     if (isClosed) {
          checkoutBtn.disabled = true;
-         checkoutBtn.innerText = "Canteen Closed";
+         checkoutBtn.innerHTML = '<i class="fas fa-lock"></i> <span>Canteen Closed</span>';
          checkoutBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
          checkoutBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
     } else {
          checkoutBtn.disabled = false;
-         checkoutBtn.innerText = "Proceed to Payment";
+         checkoutBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> <span>Place Order</span>';
          checkoutBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
          checkoutBtn.classList.add('bg-orange-600', 'hover:bg-orange-700');
     }
@@ -711,7 +776,7 @@ function updateCartUI() {
         total += item.price * item.qty;
         return `
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 flex items-center justify-center font-bold text-xs border border-orange-200 dark:border-orange-800">
                     ${item.qty}
                 </div>
@@ -721,8 +786,8 @@ function updateCartUI() {
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="updateCartQty(${item.id}, -1)" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center"><i class="fas fa-minus text-xs"></i></button>
-                <button onclick="updateCartQty(${item.id}, 1)" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center"><i class="fas fa-plus text-xs"></i></button>
+                <button onclick="updateCartQty(${item.id}, -1)" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors"><i class="fas fa-minus text-xs"></i></button>
+                <button onclick="updateCartQty(${item.id}, 1)" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors"><i class="fas fa-plus text-xs"></i></button>
             </div>
         </div>`;
     }).join('');
@@ -900,26 +965,14 @@ function renderHistory() {
 window.openConfirmModal = function(event, id) {
     if(event) event.stopPropagation();
     orderToCancelId = id;
+    confirmAction = 'cancelOrder';
+    
+    const order = orders.find(o => o.id === id);
+    document.getElementById('confirm-title').innerText = 'Cancel Order?';
+    document.getElementById('confirm-message').innerText = order ? `Are you sure you want to cancel order #${order.id}?` : 'Are you sure you want to cancel this order?';
+    document.getElementById('confirm-icon').className = 'fas fa-exclamation-triangle text-red-600 dark:text-red-400 text-xl';
     document.getElementById('confirm-modal').classList.remove('hidden');
     document.getElementById('confirm-modal').classList.add('flex');
-};
-
-window.closeConfirmModal = function() {
-    orderToCancelId = null;
-    document.getElementById('confirm-modal').classList.add('hidden');
-    document.getElementById('confirm-modal').classList.remove('flex');
-};
-
-window.proceedCancel = function() {
-    if (!orderToCancelId) return;
-    
-    const order = orders.find(o => o.id === orderToCancelId);
-    if(order) {
-        order.status = 'cancelled';
-        renderHistory();
-        showToast('Order Cancelled');
-    }
-    closeConfirmModal();
 };
 
 window.reorder = function(id) {
