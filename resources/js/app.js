@@ -58,7 +58,9 @@ let cart = [];
 let orders = []; 
 let currentUser = null;
 let currentCategory = 'All';
-let currentModalQty = 1; 
+let currentModalQty = 1;
+let isEditMode = false;
+let isCartEditMode = false; 
 
 // --- Init ---
 window.onload = function() {
@@ -89,11 +91,19 @@ window.toggleDarkMode = function() {
 // --- Time Slot Generation ---
 function generatePickupTimes() {
     const select = document.getElementById('pickup-time');
-    select.innerHTML = ''; 
+    const checkoutSelect = document.getElementById('checkout-pickup-time');
+    
+    if (select) {
+        select.innerHTML = ''; 
+    }
+    if (checkoutSelect) {
+        checkoutSelect.innerHTML = '';
+    }
 
     const now = new Date();
     const startHour = 8;
     const endHour = 17;
+    const options = [];
 
     for (let hour = startHour; hour < endHour; hour++) {
         for (let min = 0; min < 60; min += 30) {
@@ -104,10 +114,7 @@ function generatePickupTimes() {
 
             if (slotTime > bufferTime) {
                 const timeString = slotTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                const option = document.createElement('option');
-                option.value = timeString;
-                option.text = timeString;
-                select.appendChild(option);
+                options.push({ value: timeString, text: timeString, disabled: false });
             }
         }
     }
@@ -116,19 +123,26 @@ function generatePickupTimes() {
     closingTime.setHours(endHour, 0, 0, 0);
     if (closingTime > new Date(now.getTime() + 15 * 60000)) {
          const timeString = closingTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-         const option = document.createElement('option');
-         option.value = timeString;
-         option.text = timeString;
-         select.appendChild(option);
+         options.push({ value: timeString, text: timeString, disabled: false });
     }
 
-    if (select.options.length === 0) {
-        const option = document.createElement('option');
-        option.text = "Canteen Closed (Next Day)";
-        option.disabled = true;
-        option.selected = true;
-        select.appendChild(option);
+    if (options.length === 0) {
+        options.push({ value: '', text: 'Canteen Closed (Next Day)', disabled: true });
     }
+
+    // Populate both selects
+    [select, checkoutSelect].forEach(selectElement => {
+        if (selectElement) {
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.text = opt.text;
+                option.disabled = opt.disabled;
+                if (opt.disabled) option.selected = true;
+                selectElement.appendChild(option);
+            });
+        }
+    });
 }
 
 // --- Helper Functions ---
@@ -290,7 +304,10 @@ window.logout = function() {
 
 // --- Payment Logic ---
 window.openPaymentModal = function() {
-    const method = document.querySelector('input[name="payment_method"]:checked').value;
+    // Check if we're on checkout page or using cart
+    const checkoutMethod = document.querySelector('input[name="checkout_payment_method"]:checked');
+    const cartMethod = document.querySelector('input[name="payment_method"]:checked');
+    const method = checkoutMethod ? checkoutMethod.value : (cartMethod ? cartMethod.value : 'ewallet');
     
     // Show appropriate payment view
     document.getElementById('payment-view-qr').classList.add('hidden');
@@ -312,8 +329,6 @@ window.openPaymentModal = function() {
     const modal = document.getElementById('payment-modal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    
-    toggleCart();
 };
 
 window.closePaymentModal = function() {
@@ -715,85 +730,7 @@ window.proceedConfirm = function() {
 };
 
 function updateCartUI() {
-    const container = document.getElementById('cart-items');
-    const checkoutBtn = document.getElementById('btn-checkout');
-    const mobileCount = document.getElementById('mobile-cart-count');
-    const pickupSelect = document.getElementById('pickup-time');
-    
-    // Show/hide sections based on cart content
-    const paymentSection = document.getElementById('payment-method-section');
-    const noteSection = document.getElementById('note-section');
-    const pickupSection = document.getElementById('pickup-section');
-    const summarySection = document.getElementById('summary-section');
-    
-    const totalQty = cart.reduce((acc, i) => acc + i.qty, 0);
-    if(totalQty > 0) {
-        mobileCount.innerText = totalQty;
-        mobileCount.classList.remove('hidden');
-        paymentSection.classList.remove('hidden');
-        noteSection.classList.remove('hidden');
-        pickupSection.classList.remove('hidden');
-        summarySection.classList.remove('hidden');
-    } else {
-        mobileCount.classList.add('hidden');
-        paymentSection.classList.add('hidden');
-        noteSection.classList.add('hidden');
-        pickupSection.classList.add('hidden');
-        summarySection.classList.add('hidden');
-    }
-
-    if (cart.length === 0) {
-        container.innerHTML = `
-            <div id="empty-cart-msg" class="text-center text-gray-300 dark:text-gray-600 py-8 flex flex-col items-center">
-                <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-full mb-3">
-                    <i class="fas fa-basket-shopping text-3xl"></i>
-                </div>
-                <p class="font-medium">Your tray is empty</p>
-                <p class="text-xs mt-1">Add some delicious food!</p>
-            </div>`;
-        checkoutBtn.disabled = true;
-        document.getElementById('cart-total').innerText = formatCurrency(0);
-        document.getElementById('cart-subtotal').innerText = formatCurrency(0);
-        return;
-    }
-
-    const isClosed = pickupSelect.options.length > 0 && pickupSelect.options[0].disabled;
-    if (isClosed) {
-         checkoutBtn.disabled = true;
-         checkoutBtn.innerHTML = '<i class="fas fa-lock"></i> <span>Canteen Closed</span>';
-         checkoutBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-         checkoutBtn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
-    } else {
-         checkoutBtn.disabled = false;
-         checkoutBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> <span>Place Order</span>';
-         checkoutBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-         checkoutBtn.classList.add('bg-orange-600', 'hover:bg-orange-700');
-    }
-
-    let total = 0;
-    
-    container.innerHTML = cart.map(item => {
-        total += item.price * item.qty;
-        return `
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 flex items-center justify-center font-bold text-xs border border-orange-200 dark:border-orange-800">
-                    ${item.qty}
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100">${item.name}</h4>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 font-medium">${formatCurrency(item.price * item.qty)}</div>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <button onclick="updateCartQty(${item.id}, -1)" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors"><i class="fas fa-minus text-xs"></i></button>
-                <button onclick="updateCartQty(${item.id}, 1)" class="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors"><i class="fas fa-plus text-xs"></i></button>
-            </div>
-        </div>`;
-    }).join('');
-
-    document.getElementById('cart-subtotal').innerText = formatCurrency(total);
-    document.getElementById('cart-total').innerText = formatCurrency(total);
+    updateSimpleCartUI();
 }
 
 window.toggleCart = function() {
@@ -814,11 +751,20 @@ window.toggleCart = function() {
 };
 
 function placeOrder() {
-    const pickupTime = document.getElementById('pickup-time').value;
+    // Check if we're on checkout page or using cart
+    const checkoutPickup = document.getElementById('checkout-pickup-time');
+    const cartPickup = document.getElementById('pickup-time');
+    const pickupTime = checkoutPickup && checkoutPickup.value ? checkoutPickup.value : (cartPickup ? cartPickup.value : '');
+    
+    const checkoutMethod = document.querySelector('input[name="checkout_payment_method"]:checked');
+    const cartMethod = document.querySelector('input[name="payment_method"]:checked');
+    const paymentMethod = checkoutMethod ? checkoutMethod.value : (cartMethod ? cartMethod.value : 'ewallet');
+    
+    const checkoutNote = document.getElementById('checkout-note');
+    const orderNote = checkoutNote && checkoutNote.value ? checkoutNote.value : '';
+    
     const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
     const idStr = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    
-    const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
     
     const newOrder = {
         id: 'M' + idStr,
@@ -828,20 +774,30 @@ function placeOrder() {
         total: total,
         status: 'pending', 
         paymentMethod: paymentMethod,
+        note: orderNote,
         timestamp: new Date()
     };
 
     orders.unshift(newOrder);
     cart = [];
     updateCartUI();
+    renderMenu(); // Update menu to reset all items to + button
     
+    // Close cart if open
     const cartPanel = document.getElementById('cart-panel');
-    if (!cartPanel.classList.contains('translate-x-full')) {
+    if (cartPanel && !cartPanel.classList.contains('translate-x-full')) {
         toggleCart();
     }
     
-    showToast('Payment Successful! Order Placed.');
-    switchView('history');
+    // If on checkout page, go back to menu
+    const checkoutView = document.getElementById('view-checkout');
+    if (checkoutView && !checkoutView.classList.contains('hidden')) {
+        switchView('student');
+    } else {
+        switchView('history');
+    }
+    
+    showToast('Order Placed Successfully! 🎉', false);
 }
 
 function loadUserOrders() {
@@ -1063,7 +1019,7 @@ window.updateStatus = function(id, newStatus) {
 };
 
 window.switchView = function(view) {
-    const views = ['view-login', 'view-register', 'view-student', 'view-history', 'view-admin', 'view-home'];
+    const views = ['view-login', 'view-register', 'view-student', 'view-checkout', 'view-history', 'view-admin', 'view-home'];
     const adminBtn = document.getElementById('btn-admin');
     const menuBtn = document.getElementById('nav-menu-btn');
     const historyBtn = document.getElementById('nav-history-btn');
@@ -1116,6 +1072,11 @@ window.switchView = function(view) {
         menuBtn.classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-100', 'dark:hover:bg-gray-700');
         menuBtn.classList.add('bg-orange-100', 'dark:bg-orange-900/30', 'text-orange-600', 'dark:text-orange-400');
 
+    } else if (view === 'checkout') {
+        document.getElementById('view-checkout').classList.remove('hidden');
+        document.getElementById('view-checkout').classList.add('flex');
+        updateCheckoutUI();
+
     } else if (view === 'history') {
         document.getElementById('view-history').classList.remove('hidden');
         document.getElementById('view-history').classList.add('flex');
@@ -1131,3 +1092,241 @@ window.switchView = function(view) {
         adminBtn.classList.add('bg-orange-100', 'dark:bg-orange-900/30', 'text-orange-700', 'dark:text-orange-400');
     }
 };
+
+// --- Simplified Cart Functions ---
+window.toggleCartEditMode = function() {
+    isCartEditMode = !isCartEditMode;
+    const editBtn = document.getElementById('cart-edit-btn');
+    
+    if (isCartEditMode) {
+        editBtn.innerHTML = '<i class="fas fa-check mr-1"></i>Done';
+        editBtn.classList.add('text-green-600', 'dark:text-green-400');
+        editBtn.classList.remove('text-orange-600', 'dark:text-orange-400');
+    } else {
+        editBtn.innerHTML = '<i class="fas fa-pen mr-1"></i>Edit';
+        editBtn.classList.remove('text-green-600', 'dark:text-green-400');
+        editBtn.classList.add('text-orange-600', 'dark:text-orange-400');
+        selectedItems = []; // Clear selections when exiting edit mode
+    }
+    updateSimpleCartUI();
+};
+
+window.selectAllCartItems = function() {
+    selectedItems = cart.map(item => item.id);
+    updateSimpleCartUI();
+};
+
+window.deselectAllCartItems = function() {
+    selectedItems = [];
+    updateSimpleCartUI();
+};
+
+function updateSimpleCartUI() {
+    const container = document.getElementById('cart-items-simple');
+    const totalSpan = document.getElementById('cart-simple-total');
+    const checkoutBtn = document.getElementById('btn-cart-checkout');
+    const mobileCount = document.getElementById('mobile-cart-count');
+    const editBtn = document.getElementById('cart-edit-btn');
+    
+    const totalQty = cart.reduce((acc, i) => acc + i.qty, 0);
+    if(totalQty > 0) {
+        mobileCount.innerText = totalQty;
+        mobileCount.classList.remove('hidden');
+        if(editBtn) editBtn.classList.remove('hidden');
+    } else {
+        mobileCount.classList.add('hidden');
+        if(editBtn) editBtn.classList.add('hidden');
+        isCartEditMode = false;
+    }
+
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-gray-400 dark:text-gray-500 py-12">
+                <i class="fas fa-basket-shopping text-4xl mb-3"></i>
+                <p class="font-medium">Your tray is empty</p>
+                <p class="text-sm mt-1">Add items to get started</p>
+            </div>`;
+        checkoutBtn.disabled = true;
+        totalSpan.innerText = formatCurrency(0);
+        return;
+    }
+
+    let total = 0;
+    
+    if (isCartEditMode) {
+        const allSelected = cart.length > 0 && selectedItems.length === cart.length;
+        container.innerHTML = `
+            <div class="flex items-center justify-between mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <button onclick="${allSelected ? 'deselectAllCartItems()' : 'selectAllCartItems()'}" class="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
+                    <i class="fas fa-${allSelected ? 'times-circle' : 'check-circle'} mr-1"></i>
+                    ${allSelected ? 'Deselect All' : 'Select All'}
+                </button>
+                <span class="text-xs text-gray-600 dark:text-gray-400">${selectedItems.length} of ${cart.length} selected</span>
+            </div>
+        ` + cart.map(item => {
+            total += item.price * item.qty;
+            const isSelected = selectedItems.includes(item.id);
+            return `
+            <label class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${isSelected ? 'ring-2 ring-red-500' : ''}">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleItemSelection(${item.id})" class="w-5 h-5 text-red-600 focus:ring-red-500 rounded">
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100">${item.name}</h4>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${item.qty}x</span>
+                        <span class="text-sm font-bold text-orange-600 dark:text-orange-400">${formatCurrency(item.price)}</span>
+                    </div>
+                </div>
+                <div class="text-sm font-bold text-gray-800 dark:text-white">
+                    ${formatCurrency(item.price * item.qty)}
+                </div>
+            </label>`;
+        }).join('') + (selectedItems.length > 0 ? `
+            <button onclick="removeSelectedItems()" class="w-full mt-3 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2">
+                <i class="fas fa-trash"></i>
+                <span>Remove ${selectedItems.length} Item(s)</span>
+            </button>
+        ` : '');
+    } else {
+        container.innerHTML = cart.map(item => {
+            total += item.price * item.qty;
+            return `
+            <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100">${item.name}</h4>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">${item.qty}x</span>
+                        <span class="text-sm font-bold text-orange-600 dark:text-orange-400">${formatCurrency(item.price)}</span>
+                    </div>
+                </div>
+                <div class="text-sm font-bold text-gray-800 dark:text-white">
+                    ${formatCurrency(item.price * item.qty)}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    totalSpan.innerText = formatCurrency(total);
+    checkoutBtn.disabled = false;
+}
+
+window.goToCheckout = function() {
+    if (cart.length === 0) return;
+    toggleCart();
+    switchView('checkout');
+};
+
+// --- Checkout Page Functions ---
+window.toggleEditMode = function() {
+    isEditMode = !isEditMode;
+    const editBtn = document.getElementById('edit-cart-btn');
+    
+    if (isEditMode) {
+        editBtn.innerHTML = '<i class="fas fa-check mr-1"></i>Done';
+        editBtn.classList.add('text-green-600', 'dark:text-green-400');
+        editBtn.classList.remove('text-orange-600', 'dark:text-orange-400');
+    } else {
+        editBtn.innerHTML = '<i class="fas fa-pen mr-1"></i>Edit';
+        editBtn.classList.remove('text-green-600', 'dark:text-green-400');
+        editBtn.classList.add('text-orange-600', 'dark:text-orange-400');
+    }
+    updateCheckoutUI();
+};
+
+let selectedItems = [];
+
+window.toggleItemSelection = function(id) {
+    const index = selectedItems.indexOf(id);
+    if (index > -1) {
+        selectedItems.splice(index, 1);
+    } else {
+        selectedItems.push(id);
+    }
+    // Update both cart and checkout UI
+    if (isCartEditMode) {
+        updateSimpleCartUI();
+    }
+    if (isEditMode) {
+        updateCheckoutUI();
+    }
+};
+
+window.removeSelectedItems = function() {
+    if (selectedItems.length === 0) return;
+    
+    const count = selectedItems.length;
+    selectedItems.forEach(id => {
+        cart = cart.filter(item => item.id !== id);
+    });
+    
+    selectedItems = [];
+    
+    // Exit edit mode in both cart and checkout
+    isEditMode = false;
+    isCartEditMode = false;
+    
+    const editBtn = document.getElementById('edit-cart-btn');
+    if (editBtn) {
+        editBtn.innerHTML = '<i class="fas fa-pen mr-1"></i>Edit';
+        editBtn.classList.remove('text-green-600', 'dark:text-green-400');
+        editBtn.classList.add('text-orange-600', 'dark:text-orange-400');
+    }
+    
+    const cartEditBtn = document.getElementById('cart-edit-btn');
+    if (cartEditBtn) {
+        cartEditBtn.innerHTML = '<i class="fas fa-pen mr-1"></i>Edit';
+        cartEditBtn.classList.remove('text-green-600', 'dark:text-green-400');
+        cartEditBtn.classList.add('text-orange-600', 'dark:text-orange-400');
+    }
+    
+    updateCheckoutUI();
+    updateSimpleCartUI();
+    renderMenu();
+    showToast(`${count} item(s) removed`);
+};
+
+function updateCheckoutUI() {
+    const container = document.getElementById('checkout-items');
+    const subtotalSpan = document.getElementById('checkout-subtotal');
+    const totalSpan = document.getElementById('checkout-total');
+    const placeOrderBtn = document.getElementById('checkout-place-order-btn');
+    const pickupSelect = document.getElementById('checkout-pickup-time');
+    
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-gray-400 dark:text-gray-500 py-8">
+                <i class="fas fa-basket-shopping text-3xl mb-2"></i>
+                <p class="font-medium">No items in cart</p>
+            </div>`;
+        placeOrderBtn.disabled = true;
+        subtotalSpan.innerText = formatCurrency(0);
+        totalSpan.innerText = formatCurrency(0);
+        return;
+    }
+
+    let total = 0;
+    
+    container.innerHTML = cart.map(item => {
+        total += item.price * item.qty;
+        return `
+        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <div class="flex-1">
+                <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100">${item.name}</h4>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-gray-500 dark:text-gray-400">${item.qty}x ${formatCurrency(item.price)}</span>
+                </div>
+            </div>
+            <div class="text-sm font-bold text-gray-800 dark:text-white">
+                ${formatCurrency(item.price * item.qty)}
+            </div>
+        </div>`;
+    }).join('');
+
+    subtotalSpan.innerText = formatCurrency(total);
+    totalSpan.innerText = formatCurrency(total);
+    placeOrderBtn.disabled = false;
+    
+    // Ensure pickup times are generated
+    if (pickupSelect && pickupSelect.options.length === 0) {
+        generatePickupTimes();
+    }
+}

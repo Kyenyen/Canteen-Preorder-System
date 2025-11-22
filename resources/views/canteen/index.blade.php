@@ -10,6 +10,7 @@
         @include('canteen.views.register')
         @include('canteen.views.home')
         @include('canteen.views.student')
+        @include('canteen.views.checkout')
         @include('canteen.views.history')
         @include('canteen.views.admin')
 
