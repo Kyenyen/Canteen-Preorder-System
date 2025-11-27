@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -19,8 +20,9 @@ return new class extends Migration
             $table->date('RefundDate')->nullable();
 
             $table->foreign('OrderId')->references('OrderId')->on('orders')->onDelete('cascade');
-            $table->check("Method IN ('Credit', 'Debit', 'QR')");
         });
+
+        DB::statement("ALTER TABLE payments ADD CONSTRAINT chk_method CHECK (Method IN ('Credit', 'Debit', 'QR'));");
     }
 
     /**

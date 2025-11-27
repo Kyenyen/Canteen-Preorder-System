@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -18,9 +19,9 @@ return new class extends Migration
             $table->string('Role', 30);
             $table->string('Password', 255);
             $table->string('Photo', 100)->nullable();
-
-            $table->check("Role IN ('User', 'Admin')");
         });
+
+        DB::statement("ALTER TABLE users ADD CONSTRAINT chk_role CHECK (Role IN ('User', 'Admin'));");
     }
 
     /**
