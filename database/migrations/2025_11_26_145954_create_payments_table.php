@@ -12,17 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payments', function (Blueprint $table) {
-            $table->increments('PaymentId');
-            $table->unsignedInteger('OrderId');
-
-            $table->string('Method');
+            $table->string('PaymentId', 5)->primary();
+            $table->string('OrderId', 5);
+            $table->string('Method', 30);
             $table->boolean('Refunded')->default(false);
             $table->date('RefundDate')->nullable();
 
             $table->foreign('OrderId')->references('OrderId')->on('orders')->onDelete('cascade');
-            $table->timestamps();
+            $table->check("Method IN ('Credit', 'Debit', 'QR')");
         });
-
     }
 
     /**

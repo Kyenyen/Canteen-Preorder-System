@@ -15,11 +15,11 @@ return new class extends Migration
             $table->string('UserId', 5)->primary();
             $table->string('Username', 30);
             $table->string('Email', 30)->unique();
-            $table->string('Role');
+            $table->string('Role', 30);
             $table->string('Password', 255);
-            $table->string('Photo')->nullable();
-            $table->rememberToken();
-            $table->timestamps();
+            $table->string('Photo', 100)->nullable();
+
+            $table->check("Role IN ('User', 'Admin')");
         });
     }
 

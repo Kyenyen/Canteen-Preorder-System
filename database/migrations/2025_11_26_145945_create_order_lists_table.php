@@ -12,18 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orderlist', function (Blueprint $table) {
-            $table->unsignedInteger('OrderId');
-            $table->unsignedInteger('ProductId');
-
+            $table->string('OrderId', 5);
+            $table->string('ProductId', 5);
             $table->integer('Quantity');
             $table->decimal('Subtotal', 6, 2);
 
             $table->primary(['OrderId', 'ProductId']);
-
             $table->foreign('OrderId')->references('OrderId')->on('orders')->onDelete('cascade');
             $table->foreign('ProductId')->references('ProductId')->on('products')->onDelete('cascade');
         });
-
     }
 
     /**
