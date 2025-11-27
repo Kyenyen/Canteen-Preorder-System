@@ -9,22 +9,22 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'ProductId';
+    protected $primaryKey = 'product_id';
     public $incrementing = false;
     public $timestamps = false;
 
     protected $fillable = [
-        'ProductId',
-        'Name',
-        'Price',
-        'Photo',
-        'Description',
-        'IsAvailable',
+        'product_id',
+        'name',
+        'price',
+        'photo',
+        'description',
+        'is_available',
     ];
 
     public function orders()
     {
-        return $this->belongsToMany(Order::class, 'orderlist', 'ProductId', 'OrderId')
-            ->withPivot('Quantity', 'Subtotal');    
+        return $this->belongsToMany(Order::class, 'orderlist', 'product_id', 'order_id')
+            ->withPivot('quantity', 'subtotal');    
     }
 }

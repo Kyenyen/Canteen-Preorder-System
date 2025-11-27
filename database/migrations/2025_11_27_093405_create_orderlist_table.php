@@ -13,14 +13,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orderlist', function (Blueprint $table) {
-            $table->string('OrderId', 5);
-            $table->string('ProductId', 5);
-            $table->integer('Quantity');
-            $table->decimal('Subtotal', 6, 2);
+            $table->string('order_id', 5);
+            $table->string('product_id', 5);
+            $table->integer('quantity');
+            $table->decimal('subtotal', 6, 2);
 
-            $table->primary(['OrderId', 'ProductId']);
-            $table->foreign('OrderId')->references('OrderId')->on('orders')->onDelete('cascade');
-            $table->foreign('ProductId')->references('ProductId')->on('products')->onDelete('cascade');
+            $table->primary(['order_id', 'product_id']);
+            $table->foreign('order_id')->references('order_id')->on('orders')->onDelete('cascade');
+            $table->foreign('product_id')->references('product_id')->on('products')->onDelete('cascade');
         });
     }
 
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_lists');
+        Schema::dropIfExists('orderlist');
     }
 };

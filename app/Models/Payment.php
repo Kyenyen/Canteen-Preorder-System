@@ -9,20 +9,20 @@ class Payment extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'PaymentId';
+    protected $primaryKey = 'payment_id';
     public $incrementing = false;
     public $timestamps = false;
 
     protected $fillable = [
-        'PaymentId',
-        'OrderId',
-        'Method',
-        'Refunded',
-        'RefundDate',
+        'payment_id',
+        'order_id',
+        'method',
+        'refunded',
+        'refund_date',
     ];
 
     public function order()
     {
-        return $this->belongsTo(Order::class, 'OrderId', 'OrderId');
+        return $this->belongsTo(Order::class, 'order_id', 'order_id');
     }
 }

@@ -13,16 +13,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payments', function (Blueprint $table) {
-            $table->string('PaymentId', 5)->primary();
-            $table->string('OrderId', 5);
-            $table->string('Method', 30);
-            $table->boolean('Refunded')->default(false);
-            $table->date('RefundDate')->nullable();
-
-            $table->foreign('OrderId')->references('OrderId')->on('orders')->onDelete('cascade');
+            $table->string('payment_id', 5)->primary();
+            $table->string('order_id', 5);
+            $table->string('method', 30);
+            $table->boolean('refunded')->default(false);
+            $table->date('refund_date')->nullable();
+            $table->foreign('order_id')->references('order_id')->on('orders')->onDelete('cascade');
         });
 
-        DB::statement("ALTER TABLE payments ADD CONSTRAINT chk_method CHECK (Method IN ('Credit', 'Debit', 'QR'));");
+        DB::statement("ALTER TABLE payments ADD CONSTRAINT chk_method CHECK (method IN ('Credit', 'Debit', 'QR'));");
     }
 
     /**

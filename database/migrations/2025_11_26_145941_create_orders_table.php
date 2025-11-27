@@ -13,19 +13,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('orders', function (Blueprint $table) {
-            $table->string('OrderId', 5)->primary();
-            $table->string('UserId', 5);
-            $table->string('Status', 15);
-            $table->decimal('Total', 6, 2);
-            $table->date('Date');
-            $table->time('PickupTime');
-            $table->string('DiningOption', 15);
+            $table->string('order_id', 5)->primary();
+            $table->string('user_id', 5);
+            $table->string('status', 15);
+            $table->decimal('total', 6, 2);
+            $table->date('date');
+            $table->time('pickup_time');
+            $table->string('dining_option', 15);
 
-            $table->foreign('UserId')->references('UserId')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
         });
 
-        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_status CHECK (Status IN ('Preparing', 'Refunded', 'Ready', 'Completed'));");
-        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_dining_option CHECK (DiningOption IN ('Dine-in', 'Takeaway'));");
+        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_status CHECK (status IN ('Preparing', 'Refunded', 'Ready', 'Completed'));");
+        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_dining_option CHECK (dining_option IN ('Dine-in', 'Takeaway'));");
     }
 
     /**

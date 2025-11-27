@@ -6,33 +6,33 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $primaryKey = 'OrderId';
+    protected $primaryKey = 'order_id';
     public $incrementing = false;
     public $timestamps = false;
 
     protected $fillable = [
-        'OrderId',
-        'UserId',
-        'Status',
-        'Total',
-        'Date',
-        'PickupTime',
-        'DiningOption',
+        'order_id',
+        'user_id',
+        'status',
+        'total',
+        'date',
+        'pickup_time',
+        'dining_option',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'UserId', 'UserId');
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'orderlist', 'OrderId', 'ProductId')
-            ->withPivot('Quantity', 'Subtotal');
+        return $this->belongsToMany(Product::class, 'orderlist', 'order_id', 'product_id')
+            ->withPivot('quantity', 'subtotal');
     }
 
     public function payment()
     {
-        return $this->hasOne(Payment::class, 'OrderId', 'OrderId');
+        return $this->hasOne(Payment::class, 'order_id', 'order_id');
     }
 }

@@ -13,15 +13,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->string('UserId', 5)->primary();
-            $table->string('Username', 30);
-            $table->string('Email', 30)->unique();
-            $table->string('Role', 30);
-            $table->string('Password', 255);
-            $table->string('Photo', 100)->nullable();
+            $table->string('user_id', 5)->primary();
+            $table->string('username', 30);
+            $table->string('email', 30)->unique();
+            $table->string('role', 30);
+            $table->string('password', 255);
+            $table->string('photo', 100)->nullable();
         });
 
-        DB::statement("ALTER TABLE users ADD CONSTRAINT chk_role CHECK (Role IN ('User', 'Admin'));");
+        DB::statement("ALTER TABLE users ADD CONSTRAINT chk_role CHECK (role IN ('User', 'Admin'));");
     }
 
     /**

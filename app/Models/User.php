@@ -10,39 +10,39 @@ class User extends Authenticatable
 {
     use HasApiTokens, Notifiable;
 
-    protected $primaryKey = 'UserId';
+    protected $primaryKey = 'user_id';
     public $incrementing = false;
     public $timestamps = false;
 
     protected $fillable = [
-        'UserId',
-        'Username',
-        'Email',
-        'Role',
-        'Photo',
-        'Password',
+        'user_id',
+        'username',
+        'email',
+        'role',
+        'photo',
+        'password',
     ];
 
     protected $hidden = [
-        'Password',
+        'password',
     ];
 
     // Return password for Laravel auth (column is 'Password' in DB)
     public function getAuthPassword()
     {
-        return $this->Password;
+        return $this->password;
     }
 
     public function orders()
     {
-        return $this->hasMany(Order::class, 'UserId', 'UserId');
+        return $this->hasMany(Order::class, 'user_id', 'user_id');
     }
 
     public function isAdmin(): bool {
-        return isset($this->Role) && $this->Role === 'Admin';
+        return isset($this->role) && $this->role === 'Admin';
     }
 
     public function hasRole(string $role): bool {
-        return isset($this->Role) && $this->Role === $role;
+        return isset($this->role) && $this->role === $role;
     }
 }
