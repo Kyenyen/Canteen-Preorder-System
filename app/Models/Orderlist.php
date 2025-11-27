@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Orderlist extends Model
+{
+    use HasFactory;
+
+    protected $table = 'orderlist';
+    protected $primaryKey = ['OrderId', 'ProductId'];
+    public $incrementing = false;
+
+    protected $fillable = [
+        'OrderId',
+        'ProductId',
+        'Quantity',
+        'Subtotal',
+    ];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'OrderId', 'OrderId');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'ProductId', 'ProductId');
+    }
+}

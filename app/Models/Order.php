@@ -6,9 +6,31 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    // Added payment fields to fillable
-    protected $fillable = ['user_id', 'pickup_time', 'total_amount', 'status', 'payment_status', 'payment_method'];
+    protected $primaryKey = 'OrderId';
+    public $incrementing = false;
 
-    public function items() { return $this->hasMany(OrderItem::class); }
-    public function user() { return $this->belongsTo(User::class); }
+    protected $fillable = [
+        'OrderId',
+        'UserId',
+        'Status',
+        'Total',
+        'Date',
+        'PickupTime',
+        'DiningOption',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'UserId', 'UserId');
+    }
+
+    public function orderlists()
+    {
+        return $this->hasMany(OrderList::class, 'OrderId', 'OrderId');
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'OrderId', 'OrderId');
+    }
 }
