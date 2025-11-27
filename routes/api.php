@@ -2,6 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CanteenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +16,23 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// Authentication Routes
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+// Menu Routes
+Route::get('/menu', [CanteenController::class, 'getMenu']);
+
+// Order Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [CanteenController::class, 'storeOrder']);
+    Route::get('/orders/history', [CanteenController::class, 'getHistory']);
+    Route::put('/orders/{id}/cancel', [CanteenController::class, 'cancelOrder']);
+
+    // Admin Routes
+    Route::middleware('can:admin')->group(function () {
+        Route::get('/admin/orders', [CanteenController::class, 'getAdminOrders']);
+        Route::put('/admin/orders/{id}/status', [CanteenController::class, 'updateStatus']);
+    });
 });
