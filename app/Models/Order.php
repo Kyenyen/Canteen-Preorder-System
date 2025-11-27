@@ -8,6 +8,7 @@ class Order extends Model
 {
     protected $primaryKey = 'OrderId';
     public $incrementing = false;
+    public $timestamps = false;
 
     protected $fillable = [
         'OrderId',
@@ -24,9 +25,10 @@ class Order extends Model
         return $this->belongsTo(User::class, 'UserId', 'UserId');
     }
 
-    public function orderlists()
+    public function products()
     {
-        return $this->hasMany(OrderList::class, 'OrderId', 'OrderId');
+        return $this->belongsToMany(Product::class, 'orderlist', 'OrderId', 'ProductId')
+            ->withPivot('Quantity', 'Subtotal');
     }
 
     public function payment()

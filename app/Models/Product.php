@@ -11,6 +11,8 @@ class Product extends Model
 
     protected $primaryKey = 'ProductId';
     public $incrementing = false;
+    public $timestamps = false;
+
     protected $fillable = [
         'ProductId',
         'Name',
@@ -20,8 +22,9 @@ class Product extends Model
         'IsAvailable',
     ];
 
-    public function orderlists()
+    public function orders()
     {
-        return $this->hasMany(Orderlist::class, 'ProductId', 'ProductId');
+        return $this->belongsToMany(Order::class, 'orderlist', 'ProductId', 'OrderId')
+            ->withPivot('Quantity', 'Subtotal');    
     }
 }

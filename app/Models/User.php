@@ -12,6 +12,7 @@ class User extends Authenticatable
 
     protected $primaryKey = 'UserId';
     public $incrementing = false;
+    public $timestamps = false;
 
     protected $fillable = [
         'UserId',
@@ -26,16 +27,22 @@ class User extends Authenticatable
         'Password',
     ];
 
+    // Return password for Laravel auth (column is 'Password' in DB)
+    public function getAuthPassword()
+    {
+        return $this->Password;
+    }
+
     public function orders()
     {
         return $this->hasMany(Order::class, 'UserId', 'UserId');
     }
 
     public function isAdmin(): bool {
-        return $this->role === "Admin";
+        return isset($this->Role) && $this->Role === 'Admin';
     }
 
     public function hasRole(string $role): bool {
-        return $this->Role === $role;
+        return isset($this->Role) && $this->Role === $role;
     }
 }
