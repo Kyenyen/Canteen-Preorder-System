@@ -40,6 +40,7 @@
             v-model="password" 
             class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white"
           >
+          <router-link to="/reset-password" class="text-xs text-orange-600 dark:text-orange-400 hover:underline font-bold float-left mt-1">Forgot Password?</router-link>
           <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">Min. 6 characters</p>
         </div>
 

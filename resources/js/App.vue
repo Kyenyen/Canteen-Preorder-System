@@ -14,6 +14,6 @@
 </template>
 
 <script setup>
-import HeaderComponent from '../views/canteen/partials/Navigation.vue'
+import HeaderComponent from '../views/canteen/components/Navigation.vue'
 import FooterComponent from '../views/canteen/components/Footer.vue'
 </script>

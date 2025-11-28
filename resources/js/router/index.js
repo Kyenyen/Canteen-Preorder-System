@@ -7,7 +7,9 @@ import Register from '../../views/canteen/pages/Register.vue'
 import Home from '../../views/canteen/pages/Home.vue'
 import Menu from '../../views/canteen/pages/Menu.vue'
 import History from '../../views/canteen/pages/History.vue'
-import Admin from '../../views/canteen/pages/Admin.vue' // Kitchen Dashboard
+import Admin from '../../views/canteen/pages/Admin.vue'
+import ResetPassword from '../../views/canteen/pages/ResetPassword.vue'
+import Profile from '../../views/canteen/pages/Profile.vue'
 
 const routes = [
   { 
@@ -35,6 +37,16 @@ const routes = [
     path: '/history', 
     component: History, 
     meta: { requiresAuth: true, title: 'My Orders' } 
+  },
+  { 
+      path: '/reset-password', 
+      component: ResetPassword, 
+      meta: { guest: true, title: 'Reset Password' } 
+  },
+  { 
+      path: '/profile', 
+      component: Profile, 
+      meta: { requiresAuth: true, title: 'Profile' } 
   },
   { 
     path: '/admin', 
