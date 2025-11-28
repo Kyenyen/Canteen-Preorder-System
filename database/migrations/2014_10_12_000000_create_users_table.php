@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('photo', 100)->nullable();
         });
 
-        DB::statement("ALTER TABLE users ADD CONSTRAINT chk_role CHECK (role IN ('User', 'Admin'));");
+        DB::statement("ALTER TABLE users ADD CONSTRAINT chk_role CHECK (role IN ('student', 'admin'));");
     }
 
     /**

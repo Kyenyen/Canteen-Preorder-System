@@ -1,25 +1,9 @@
-@extends('layouts.main')
-
-@section('content')
-    @include('canteen.partials.navigation')
-
-    <!-- Main Content Area -->
-    <div id="main-container" class="flex-1 overflow-hidden relative">
-        
-        @include('canteen.views.login')
-        @include('canteen.views.register')
-        @include('canteen.views.home')
-        @include('canteen.views.student')
-        @include('canteen.views.checkout')
-        @include('canteen.views.history')
-        @include('canteen.views.admin')
-
-        <!-- GLOBAL COMPONENTS -->
-        @include('canteen.components.cart')
-        @include('canteen.components.payment-modal')
-        @include('canteen.components.confirm-modal')
-        @include('canteen.components.product-modal')
-        @include('canteen.components.toast')
-
-    </div>
-@endsection
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    @vite('resources/js/app.js')
+</head>
+<body class="bg-gray-100">
+    <div id="app"></div>
+</body>
+</html>

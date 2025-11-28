@@ -15,16 +15,16 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:30',
             'email' => [
-                'required', 
-                'string', 
-                'email', 
-                'max:255', 
-                'unique:users', 
+                'required',
+                'string',
+                'email',
+                'max:30',
+                'unique:users',
                 'regex:/@(student|admin)\.tarc\.edu\.my$/i'
             ],
-            'password' => 'required|string|min:6|confirmed', 
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         $role = 'student';
@@ -32,8 +32,19 @@ class AuthController extends Controller
             $role = 'admin';
         }
 
+        $lastUser = User::orderBy('user_id', 'desc')->first();
+
+        if ($lastUser) {
+            $number = intval(substr($lastUser->user_id, 1)) + 1;
+        } else {
+            $number = 1;
+        }
+
+        $userId = 'U' . str_pad($number, 4, '0', STR_PAD_LEFT);
+
         $user = User::create([
-            'name' => $validated['name'],
+            'user_id' => $userId,
+            'username' => $validated['username'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => $role
@@ -63,7 +74,14 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $accessToken = $request->user()->currentAccessToken();
+
+        // FIX: Strictly check if the token is a PersonalAccessToken (database token).
+        // If it is a TransientToken (cookie/session auth), this check fails, skipping the delete call.
+        if ($accessToken instanceof \Laravel\Sanctum\PersonalAccessToken) {
+            $accessToken->delete();
+        }
+
         return response()->json(['message' => 'Logged out']);
     }
 }

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
+// Catch all for Vue SPA
+Route::get('/{any}', function () {
     return view('canteen.index');
-});
+})->where('any', '.*');

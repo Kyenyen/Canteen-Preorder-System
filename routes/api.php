@@ -4,6 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CanteenController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,20 +22,19 @@ use App\Http\Controllers\CanteenController;
 // Authentication Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
-
-// Menu Routes
-Route::get('/menu', [CanteenController::class, 'getMenu']);
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
 // Order Routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/orders', [CanteenController::class, 'storeOrder']);
-    Route::get('/orders/history', [CanteenController::class, 'getHistory']);
-    Route::put('/orders/{id}/cancel', [CanteenController::class, 'cancelOrder']);
+    Route::get('/menu', [ProductController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/history', [OrderController::class, 'index']);
+    Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+    Route::post('/payments', [PaymentController::class, 'store']);
 
     // Admin Routes
     Route::middleware('can:admin')->group(function () {
-        Route::get('/admin/orders', [CanteenController::class, 'getAdminOrders']);
-        Route::put('/admin/orders/{id}/status', [CanteenController::class, 'updateStatus']);
+        Route::get('/admin/orders', [OrderController::class, 'indexAdmin']);
+        Route::put('/admin/orders/{id}/status', [OrderController::class, 'updateStatus']);
     });
 });
