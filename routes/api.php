@@ -21,7 +21,8 @@ use App\Http\Controllers\PaymentController;
 // Authentication Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
+Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
+Route::post('/reset-password', [AuthController::class, 'reset']);
 
 // Order Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -30,14 +31,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user/password', [AuthController::class, 'changePassword']);
 
     Route::get('/menu', [ProductController::class, 'index']);
+    Route::get('/menu/{id}', [ProductController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/history', [OrderController::class, 'index']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::post('/payments', [PaymentController::class, 'store']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
     // Admin Routes
     Route::middleware('can:admin')->group(function () {
         Route::get('/admin/orders', [OrderController::class, 'indexAdmin']);
         Route::put('/admin/orders/{id}/status', [OrderController::class, 'updateStatus']);
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::post('/products/{id}', [ProductController::class, 'updateProduct']);
+        Route::delete('/products/{id}', [ProductController::class, 'destroy']);
     });
 });

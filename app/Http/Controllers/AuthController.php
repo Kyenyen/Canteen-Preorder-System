@@ -147,7 +147,7 @@ class AuthController extends Controller
 
         $request->validate([
             'username' => 'required|string|max:30',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif', // Validation for 'photo'
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg',
         ]);
 
         $user->username = $request->username;
@@ -159,7 +159,7 @@ class AuthController extends Controller
             }
 
             $path = $request->file('photo')->store('photos', 'public');
-            $user->photo = $path; // Save to 'photo' column
+            $user->photo = $path; 
         }
 
         $user->save();
