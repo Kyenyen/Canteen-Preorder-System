@@ -49,14 +49,18 @@
                     <div class="text-sm font-bold text-gray-800 dark:text-white leading-tight">{{ currentUser.username }}</div>
                     <div class="text-xs text-gray-500 dark:text-gray-400 uppercase">{{ currentUser.role }}</div>
                 </div>
-                <!-- Profile Avatar (Replaces Logout Button) -->
-                <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-gray-700 flex items-center justify-center text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-gray-600 transition-transform group-hover:scale-105 shadow-sm">
-                    <i class="fas fa-user"></i>
+                
+                <!-- UPDATED: Profile Avatar Logic -->
+                <!-- Added overflow-hidden to ensure the image stays circular -->
+                <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-gray-700 flex items-center justify-center text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-gray-600 transition-transform group-hover:scale-105 shadow-sm overflow-hidden">
+                    <!-- IF user has a photo, show the image -->
+                    <img v-if="currentUser.photo" :src="getAvatarUrl(currentUser.photo)" alt="User Avatar" class="w-full h-full object-cover">
+                    <!-- ELSE show the default icon -->
+                    <i v-else class="fas fa-user"></i>
                 </div>
             </button>
 
             <!-- Dropdown Menu -->
-            <!-- Invisible by default, becomes visible on group-hover -->
             <div class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 transform origin-top-right z-50">
                 
                 <!-- Profile Link -->
@@ -94,6 +98,13 @@ function toggleDarkMode() {
 // Auth store
 const authStore = useAuthStore()
 const currentUser = computed(() => authStore.user)
+
+// NEW: Helper function to get full image URL
+const getAvatarUrl = (path) => {
+    if (!path) return null
+    // If path is already a full URL, return it; otherwise append storage path
+    return path.startsWith('http') ? path : `/storage/${path}`
+}
 
 function logout() {
   authStore.logout()

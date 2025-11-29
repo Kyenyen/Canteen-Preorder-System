@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CanteenController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
@@ -26,6 +25,10 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 
 // Order Routes
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {return $request->user();});
+    Route::post('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/user/password', [AuthController::class, 'changePassword']);
+
     Route::get('/menu', [ProductController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/history', [OrderController::class, 'index']);

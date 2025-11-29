@@ -12,18 +12,30 @@
       </router-link>
     </div>
 
+    <!-- Main Content -->
     <div class="max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6">
       
       <!-- Left Column: User Card -->
       <div class="md:col-span-1">
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 text-center">
-            <div class="w-24 h-24 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600 dark:text-orange-400 text-3xl">
-                <i class="fas fa-user"></i>
+            
+            <!-- Profile Photo Upload -->
+            <div class="relative group mx-auto mb-4 w-28 h-28 cursor-pointer" @click="triggerFileInput">
+                <div class="w-full h-full rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                    <img v-if="previewUrl || (user && user.photo)" :src="previewUrl || getAvatarUrl(user.photo)" class="w-full h-full object-cover">
+                    <i v-else class="fas fa-user text-orange-600 dark:text-orange-400 text-4xl"></i>
+                </div>
+                <div class="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <i class="fas fa-camera text-white text-xl"></i>
+                </div>
             </div>
-            <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ user.username }}</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ user.email }}</p>
+            
+            <input type="file" ref="fileInput" @change="handleFileChange" class="hidden" accept="image/*">
+
+            <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ user?.username || 'User' }}</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ user?.email || '' }}</p>
             <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold uppercase rounded-full tracking-wider">
-                {{ user.role }}
+                {{ user?.role || 'Student' }}
             </span>
         </div>
       </div>
@@ -31,37 +43,46 @@
       <!-- Right Column: Edit Forms -->
       <div class="md:col-span-2 space-y-6">
         
-        <!-- Profile Details -->
+        <!-- 1. Profile Details Form -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                 <i class="fas fa-id-card text-orange-500"></i> Account Details
             </h3>
+
+            <!-- Profile Messages -->
+            <div v-if="profileMsg" :class="`mb-4 p-3 rounded-lg text-sm flex items-start gap-2 whitespace-pre-line ${profileMsgType === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`">
+                <i :class="`fas ${profileMsgType === 'success' ? 'fa-check-circle mt-1' : 'fa-exclamation-circle mt-1'}`"></i>
+                <span>{{ profileMsg }}</span>
+            </div>
+
             <div class="grid grid-cols-1 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">User ID</label>
-                    <input type="text" :value="user.user_id" disabled class="w-full p-3 bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input type="text" :value="user?.user_id" disabled class="w-full p-3 bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 cursor-not-allowed">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Username</label>
                     <input type="text" v-model="form.username" class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition">
                 </div>
                 <div class="flex justify-end">
-                    <button @click="updateProfile" :disabled="loading" class="bg-gray-900 dark:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-500 transition text-sm">
-                        Update Info
+                    <button type="button" @click="updateProfile" :disabled="profileLoading" class="bg-gray-900 dark:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-500 transition text-sm flex items-center gap-2 disabled:opacity-50">
+                        <i v-if="profileLoading" class="fas fa-spinner fa-spin"></i>
+                        <span>{{ profileLoading ? 'Updating...' : 'Update Info' }}</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- Change Password -->
+        <!-- 2. Change Password Form -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                 <i class="fas fa-lock text-orange-500"></i> Change Password
             </h3>
             
-            <div v-if="msg" :class="`mb-4 p-3 rounded-lg text-sm flex items-center gap-2 ${msgType === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`">
-                <i :class="`fas ${msgType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`"></i>
-                {{ msg }}
+            <!-- Password Messages -->
+            <div v-if="passwordMsg" :class="`mb-4 p-3 rounded-lg text-sm flex items-start gap-2 whitespace-pre-line ${passwordMsgType === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`">
+                <i :class="`fas ${passwordMsgType === 'success' ? 'fa-check-circle mt-1' : 'fa-exclamation-circle mt-1'}`"></i>
+                <span>{{ passwordMsg }}</span>
             </div>
 
             <form @submit.prevent="changePassword" class="space-y-4">
@@ -73,6 +94,7 @@
                     <div>
                         <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">New Password</label>
                         <input type="password" v-model="pwd.new" required class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition">
+                        <p class="text-xs text-gray-400 mt-1">Min. 6 characters</p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Confirm Password</label>
@@ -80,8 +102,9 @@
                     </div>
                 </div>
                 <div class="flex justify-end">
-                    <button type="submit" :disabled="loading" class="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 transition text-sm shadow-md">
-                        Change Password
+                    <button type="submit" :disabled="passwordLoading" class="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 transition text-sm shadow-md flex items-center gap-2 disabled:opacity-50">
+                        <i v-if="passwordLoading" class="fas fa-spinner fa-spin"></i>
+                        <span>Change Password</span>
                     </button>
                 </div>
             </form>
@@ -93,18 +116,27 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue' 
 import { useAuthStore } from '../../../js/stores/auth'
 import axios from 'axios'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user || {})
-const loading = ref(false)
-const msg = ref('')
-const msgType = ref('')
+
+const profileLoading = ref(false)
+const passwordLoading = ref(false)
+
+const profileMsg = ref('')
+const profileMsgType = ref('')
+const passwordMsg = ref('')
+const passwordMsgType = ref('')
+
+const fileInput = ref(null)
+const previewUrl = ref(null)
+const selectedFile = ref(null)
 
 const form = reactive({
-    username: user.value.username
+    username: user.value?.username || ''
 })
 
 const pwd = reactive({
@@ -113,48 +145,100 @@ const pwd = reactive({
     confirm: ''
 })
 
-const updateProfile = async () => {
-    loading.value = true
+onMounted(async () => {
     try {
-        await axios.put('/api/user/profile', { username: form.username })
-        // Update local store
-        authStore.user.username = form.username
-        showMsg('Profile updated successfully', 'success')
+        const response = await axios.get('/api/user')
+        authStore.user = response.data
+        form.username = response.data.username
     } catch (err) {
-        showMsg('Failed to update profile', 'error')
+        console.error("Failed to fetch fresh profile data.", err)
+    }
+})
+
+const getAvatarUrl = (path) => {
+    if (!path || typeof path !== 'string') return null
+    return path.startsWith('http') ? path : `/storage/${path}`
+}
+
+const triggerFileInput = () => {
+    fileInput.value.click()
+}
+
+const handleFileChange = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+        selectedFile.value = file
+        previewUrl.value = URL.createObjectURL(file)
+    }
+}
+
+const getErrorMessage = (err, defaultMsg) => {
+    if (err.response && err.response.data && err.response.data.errors) {
+        return Object.values(err.response.data.errors).flat().join('\n');
+    }
+    return err.response?.data?.message || defaultMsg;
+}
+
+const updateProfile = async () => {
+    profileLoading.value = true
+    profileMsg.value = '' 
+    
+    try {
+        const formData = new FormData()
+        formData.append('username', form.username)
+        if (selectedFile.value) {
+            formData.append('photo', selectedFile.value)
+        }
+
+        const response = await axios.post('/api/user/profile', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        authStore.user = response.data.user
+        showMsg('profile', 'Profile updated successfully', 'success')
+    } catch (err) {
+        console.error(err)
+        const message = getErrorMessage(err, 'Failed to update profile');
+        showMsg('profile', message, 'error')
     } finally {
-        loading.value = false
+        profileLoading.value = false
     }
 }
 
 const changePassword = async () => {
-    if (pwd.new !== pwd.confirm) {
-        showMsg('New passwords do not match', 'error')
-        return
-    }
+    passwordMsg.value = '' 
     
-    loading.value = true
+    passwordLoading.value = true
     try {
         await axios.put('/api/user/password', {
             current_password: pwd.current,
             password: pwd.new,
             password_confirmation: pwd.confirm
         })
-        showMsg('Password changed successfully', 'success')
+        showMsg('password', 'Password changed successfully', 'success')
+        
         pwd.current = ''
         pwd.new = ''
         pwd.confirm = ''
     } catch (err) {
-        showMsg(err.response?.data?.message || 'Failed to change password', 'error')
+        console.error(err)
+        const message = getErrorMessage(err, 'Failed to change password');
+        showMsg('password', message, 'error')
     } finally {
-        loading.value = false
+        passwordLoading.value = false
     }
 }
 
-const showMsg = (message, type) => {
-    msg.value = message
-    msgType.value = type
-    setTimeout(() => { msg.value = '' }, 3000)
+const showMsg = (section, message, type) => {
+    if (section === 'profile') {
+        profileMsg.value = message
+        profileMsgType.value = type
+        if(type === 'success') setTimeout(() => { profileMsg.value = '' }, 3000)
+    } else {
+        passwordMsg.value = message
+        passwordMsgType.value = type
+        if(type === 'success') setTimeout(() => { passwordMsg.value = '' }, 3000)
+    }
 }
 </script>
 
