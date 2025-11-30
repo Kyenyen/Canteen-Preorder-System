@@ -8,6 +8,7 @@ import Home from '../../views/canteen/pages/Home.vue'
 import Menu from '../../views/canteen/pages/Menu.vue'
 import History from '../../views/canteen/pages/History.vue'
 import Admin from '../../views/canteen/pages/Admin.vue'
+import ProductManager from '../../views/canteen/pages/ProductManager.vue'
 import ForgotPassword from '../../views/canteen/pages/ForgotPassword.vue'
 import ResetPassword from '../../views/canteen/pages/ResetPassword.vue'
 import Profile from '../../views/canteen/pages/Profile.vue'
@@ -17,7 +18,7 @@ const routes = [
     path: '/', 
     alias: '/login', 
     component: Login, 
-    meta: { guest: true, title: 'Login' } // Changed to just the page name
+    meta: { guest: true, title: 'Login' }
   },
   { 
     path: '/register', 
@@ -58,6 +59,11 @@ const routes = [
     path: '/admin', 
     component: Admin, 
     meta: { requiresAuth: true, title: 'Kitchen Dashboard' } 
+  },
+    { 
+    path: '/admin/menu', // New URL
+    component: ProductManager, 
+    meta: { requiresAuth: true, title: 'Menu Manager', role: 'admin' } 
   },
   // Catch-all
   { path: '/:pathMatch(.*)*', redirect: '/' }

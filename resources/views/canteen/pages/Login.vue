@@ -12,8 +12,9 @@
       </div>
 
       <!-- Login Error Message -->
-      <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm rounded-lg flex items-center gap-2 animate-pulse">
-        <i class="fas fa-exclamation-circle"></i>
+      <!-- Added whitespace-pre-line to properly display multiple errors on new lines -->
+      <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm rounded-lg flex items-start gap-2 animate-pulse whitespace-pre-line text-left">
+        <i class="fas fa-exclamation-circle mt-0.5"></i>
         <span>{{ errorMessage }}</span>
       </div>
 
@@ -40,12 +41,18 @@
             v-model="password" 
             class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white"
           >
-          <router-link to="/forgot-password" class="text-xs text-orange-600 dark:text-orange-400 hover:underline font-bold float-left mt-1">Forgot Password?</router-link>
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 text-right">Min. 6 characters</p>
+          <!-- Helper Text & Forgot Password Link Container -->
+          <div class="flex justify-between items-center mt-1">
+            <router-link to="/forgot-password" class="text-xs text-orange-600 dark:text-orange-400 underline hover:text-orange-700 dark:hover:text-orange-300 transition-colors font-bold">
+              Forgot Password?
+            </router-link>
+            <p class="text-xs text-gray-400 dark:text-gray-500 text-right">Min. 6 characters</p>
+          </div>
         </div>
 
-        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 text-lg">
-          Sign In
+        <button type="submit" :disabled="loading" class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 text-lg flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+          <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+          <span>{{ loading ? 'Signing In...' : 'Sign In' }}</span>
         </button>
       </form>
 
@@ -60,36 +67,47 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
 import { useAuthStore } from '../../../js/stores/auth'
 import { useRouter } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const loading = ref(false)
 
 const authStore = useAuthStore()
 const router = useRouter()
 
 const handleLogin = async () => {
   errorMessage.value = ''
+  loading.value = true
+
   try {
     await authStore.login(email.value, password.value)
-    router.push('/home') // Redirect to home after login
+    
+    // Redirect based on role (Admin vs Student)
+    if (authStore.user?.role === 'admin') {
+        router.push('/admin')
+    } else {
+        router.push('/home')
+    }
+
   } catch (err) {
     if (err.response && err.response.data && err.response.data.errors) {
-      errorMessage.value = Object.values(err.response.data.errors).flat().join(', ')
+      // Join multiple errors with a newline for cleaner display
+      errorMessage.value = Object.values(err.response.data.errors).flat().join('\n')
     } else if (err.response && err.response.data && err.response.data.message) {
       errorMessage.value = err.response.data.message
     } else {
-      errorMessage.value = 'Login failed. Please try again.'
+      errorMessage.value = 'Login failed. Please check your credentials.'
     }
+  } finally {
+    loading.value = false
   }
 }
 </script>
 
 <style scoped>
-/* Optional: Add fade-in animation if you want */
 .fade-in {
   animation: fadeIn 0.3s ease-in-out;
 }

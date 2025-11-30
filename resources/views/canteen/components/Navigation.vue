@@ -40,6 +40,9 @@
           <router-link to="/admin" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <i class="fas fa-fire-burner mr-1"></i> Kitchen View
           </router-link>
+          <router-link to="/admin/menu" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <i class="fas fa-edit mr-1"></i> Manage Menu
+          </router-link>
         </div>
 
         <!-- User Profile Dropdown (Hover to open) -->
@@ -50,7 +53,6 @@
                     <div class="text-xs text-gray-500 dark:text-gray-400 uppercase">{{ currentUser.role }}</div>
                 </div>
                 
-                <!-- UPDATED: Profile Avatar Logic -->
                 <!-- Added overflow-hidden to ensure the image stays circular -->
                 <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-gray-700 flex items-center justify-center text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-gray-600 transition-transform group-hover:scale-105 shadow-sm overflow-hidden">
                     <!-- IF user has a photo, show the image -->

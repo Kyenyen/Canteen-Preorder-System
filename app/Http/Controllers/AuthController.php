@@ -18,7 +18,6 @@ class AuthController extends Controller
     // 1. Register with Custom Error Messages
     public function register(Request $request)
     {
-        // Add custom messages as the second argument
         $validated = $request->validate([
             'username' => 'required|string|max:30',
             'email' => [
@@ -47,7 +46,6 @@ class AuthController extends Controller
             $role = 'admin';
         }
 
-        // Custom ID Logic (U0001, U0002...)
         $lastUser = User::orderBy('user_id', 'desc')->first();
 
         if ($lastUser) {
@@ -70,11 +68,16 @@ class AuthController extends Controller
         return response()->json(['token' => $token, 'user' => $user]);
     }
 
+    // 2. Login with Custom Messages
     public function login(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|string'
+        ], [
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Please enter a valid email format.',
+            'password.required' => 'Please enter your password.',
         ]);
 
         if (!Auth::attempt($request->only('email', 'password'))) {
@@ -88,91 +91,93 @@ class AuthController extends Controller
         return response()->json(['token' => $token, 'user' => $user]);
     }
 
-    /**
-     * Send a reset link email to the user.
-     * Corresponds to the client posting to /api/forgot-password.
-     */
     public function sendResetLinkEmail(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate(['email' => 'required|email'], [
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Please enter a valid email address.'
+        ]);
 
-        // Laravel's Password::sendResetLink will handle token generation, storage,
-        // and sending the Mailable (Notification).
         $status = Password::sendResetLink(
             $request->only('email')
         );
 
         if ($status === Password::RESET_LINK_SENT) {
-            // Success status message (e.g., "We have emailed your password reset link!")
             return response()->json(['message' => __($status)]);
         }
 
-        // Failure status message (e.g., "We can't find a user with that email address.")
         throw ValidationException::withMessages([
             'email' => [__($status)],
         ]);
     }
 
-    /**
-     * Reset the user's password.
-     * Corresponds to the client posting to /api/reset-password after clicking the email link.
-     */
     public function reset(Request $request)
     {
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            // Note: Password minimum validation is often 8 characters for security,
-            // but matching register's 6 is safer for consistency if register remains 6.
-            'password' => 'required|string|min:6|confirmed', 
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'password.required' => 'Please enter a new password.',
+            'password.min' => 'Password must be at least 6 characters.',
+            'password.confirmed' => 'Passwords do not match.'
         ]);
 
-        // Attempt to reset the password using the token
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
-                // Update the user's password in the database
                 $user->forceFill([
                     'password' => Hash::make($password)
                 ])->setRememberToken(Str::random(60));
 
                 $user->save();
 
-                // Fire the PasswordReset event
                 event(new PasswordReset($user));
             }
         );
 
         if ($status === Password::PASSWORD_RESET) {
-            // Success status message
             return response()->json(['message' => __($status)]);
         }
 
-        // Failure status message (e.g., "This password reset token is invalid.")
         throw ValidationException::withMessages([
             'email' => [__($status)],
         ]);
     }
 
+    // 3. Update Profile with Custom Messages
     public function updateProfile(Request $request)
     {
         $user = $request->user();
 
         $request->validate([
             'username' => 'required|string|max:30',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg', 
+        ], [
+            'username.required' => 'Username cannot be empty.',
+            'username.max' => 'Username cannot exceed 30 characters.',
+            'photo.image' => 'The uploaded file must be an image.',
+            'photo.mimes' => 'Only jpeg, png and jpg formats are allowed.',
         ]);
 
         $user->username = $request->username;
 
         if ($request->hasFile('photo')) {
-            // Check for 'photo' column
-            if ($user->photo && Storage::disk('public')->exists($user->photo)) {
-                Storage::disk('public')->delete($user->photo);
+            // 1. Delete old photo if it exists in 'public/photos'
+            // Using public_path() for direct file access
+            if ($user->photo && file_exists(public_path($user->photo))) {
+                unlink(public_path($user->photo));
             }
 
-            $path = $request->file('photo')->store('photos', 'public');
-            $user->photo = $path; 
+            // 2. Store new photo in 'photos' folder
+            $file = $request->file('photo');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            
+            // Move directly to public folder (no symlink needed)
+            $file->move(public_path('photos'), $filename);
+            
+            // 3. Save relative path
+            $user->photo = 'photos/' . $filename; 
         }
 
         $user->save();
@@ -183,47 +188,29 @@ class AuthController extends Controller
         ]);
     }
 
+    // 4. Change Password with Custom Messages
     public function changePassword(Request $request)
     {
         $user = $request->user();
 
-        // 1. Validate that current_password was actually sent
-        $request->validate(['current_password' => 'required'], [
-            'current_password.required' => 'Please enter your current password.'
+        // Consolidated validation with messages
+        $request->validate([
+            'current_password' => ['required'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'current_password.required' => 'Please enter your current password.',
+            'password.required' => 'Please enter a new password.',
+            'password.min' => 'The new password must be at least 6 characters.',
+            'password.confirmed' => 'The password confirmation does not match.',
         ]);
 
-        // 2. CHECK DATABASE MATCH
+        // Check DB Match
         if (!Hash::check($request->current_password, $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['The current password you entered is incorrect.']
             ]);
         }
 
-        // 3. Manual validation for new password
-        // FIX: Changed 'new_password' to 'password' to match Vue frontend payload
-        
-        // Check Required
-        if (!$request->filled('password')) {
-            throw ValidationException::withMessages([
-                'password' => ['Please enter a new password.']
-            ]);
-        }
-
-        // Check Min Length
-        if (strlen($request->password) < 6) {
-            throw ValidationException::withMessages([
-                'password' => ['The new password must be at least 6 characters.']
-            ]);
-        }
-
-        // Check Confirmation (frontend sends 'password_confirmation')
-        if ($request->password !== $request->password_confirmation) {
-            throw ValidationException::withMessages([
-                'password' => ['The password confirmation does not match.']
-            ]);
-        }
-
-        // 4. Update
         $user->password = Hash::make($request->password);
         $user->save();
 
@@ -234,8 +221,6 @@ class AuthController extends Controller
     {
         $accessToken = $request->user()->currentAccessToken();
 
-        // FIX: Strictly check if the token is a PersonalAccessToken (database token).
-        // If it is a TransientToken (cookie/session auth), this check fails, skipping the delete call.
         if ($accessToken instanceof \Laravel\Sanctum\PersonalAccessToken) {
             $accessToken->delete();
         }
