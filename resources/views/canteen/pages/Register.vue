@@ -67,16 +67,6 @@ const authStore = useAuthStore()
 const handleRegister = async () => {
   errorMessage.value = ''
 
-  // Optional: basic frontend validation
-  if (!username.value || !email.value || !password.value || !password_confirmation.value) {
-    errorMessage.value = 'Please fill in all fields.'
-    return
-  }
-  if (password.value !== password_confirmation.value) {
-    errorMessage.value = 'Passwords do not match.'
-    return
-  }
-
   try {
     await authStore.register({
       username: username.value,

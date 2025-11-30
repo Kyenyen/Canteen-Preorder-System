@@ -15,8 +15,10 @@ use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
+    // 1. Register with Custom Error Messages
     public function register(Request $request)
     {
+        // Add custom messages as the second argument
         $validated = $request->validate([
             'username' => 'required|string|max:30',
             'email' => [
@@ -28,6 +30,16 @@ class AuthController extends Controller
                 'regex:/@(student|admin)\.tarc\.edu\.my$/i'
             ],
             'password' => 'required|string|min:6|confirmed',
+        ], [
+            'username.required' => 'Please enter a username.',
+            'username.max' => 'Username cannot exceed 30 characters.',
+            'email.required' => 'An email address is required.',
+            'email.email' => 'Please enter a valid email format.',
+            'email.unique' => 'This email is already registered.',
+            'email.regex' => 'You must use a valid TARC email (@student.tarc.edu.my or @admin.tarc.edu.my).',
+            'password.required' => 'A password is required.',
+            'password.min' => 'Password must be at least 6 characters.',
+            'password.confirmed' => 'The password confirmation does not match.',
         ]);
 
         $role = 'student';
@@ -35,6 +47,7 @@ class AuthController extends Controller
             $role = 'admin';
         }
 
+        // Custom ID Logic (U0001, U0002...)
         $lastUser = User::orderBy('user_id', 'desc')->first();
 
         if ($lastUser) {
