@@ -9,8 +9,8 @@
           v-for="cat in categories"
           :key="cat"
           @click="filterMenu(cat)"
-          :class="['category-btn px-6 py-2 rounded-full text-sm font-bold shadow-md transition-all transform hover:scale-105',
-                    currentCategory === cat ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700']"
+          :class="['px-6 py-2 rounded-full text-sm font-bold shadow-md transition-all transform hover:scale-105 whitespace-nowrap',
+                   currentCategory === cat ? 'bg-gray-900 dark:bg-gray-700 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700']"
         >
           {{ cat }}
         </button>
@@ -18,21 +18,46 @@
 
       <!-- Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
-        <div v-for="item in filteredMenu" :key="item.id" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col justify-between">
-          <div>
-            <h4 class="font-bold text-gray-800 dark:text-white mb-2">{{ item.name }}</h4>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ item.description }}</p>
+        
+        <!-- Menu Item Card -->
+        <div v-for="item in filteredMenu" :key="item.product_id" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition">
+          
+          <!-- Image -->
+          <div class="h-48 w-full bg-gray-100 dark:bg-gray-700 relative">
+             <img v-if="item.photo" :src="getPhotoUrl(item.photo)" class="w-full h-full object-cover">
+             <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
+                <i class="fas fa-utensils text-4xl"></i>
+             </div>
+             <!-- Category Badge -->
+             <span class="absolute top-3 left-3 bg-white/90 dark:bg-black/60 backdrop-blur text-xs font-bold px-2 py-1 rounded-md text-gray-800 dark:text-white uppercase tracking-wide">
+                {{ item.category }}
+             </span>
           </div>
-          <div class="flex justify-between items-center mt-2">
-            <span class="text-orange-600 dark:text-orange-400 font-bold">RM {{ item.price.toFixed(2) }}</span>
-            <button @click="addToCart(item)" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-xl text-sm transition transform active:scale-95">
-              Add
-            </button>
+
+          <!-- Content -->
+          <div class="p-4 flex flex-col flex-1">
+            <div class="flex-1">
+                <div class="flex justify-between items-start mb-1">
+                    <h4 class="font-bold text-gray-800 dark:text-white text-lg leading-tight">{{ item.name }}</h4>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ item.description }}</p>
+            </div>
+            
+            <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <span class="text-orange-600 dark:text-orange-400 font-extrabold text-lg">RM {{ Number(item.price).toFixed(2) }}</span>
+              <button @click="addToCart(item)" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-orange-200 dark:shadow-none transition transform active:scale-95 flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
           </div>
         </div>
-        <div v-if="filteredMenu.length === 0" class="col-span-full text-center text-gray-400 dark:text-gray-500 py-10">
-          No items found.
+
+        <!-- Empty State -->
+        <div v-if="filteredMenu.length === 0" class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500">
+          <i class="fas fa-hamburger text-6xl mb-4 opacity-20"></i>
+          <p>No items found in this category.</p>
         </div>
+
       </div>
     </div>
   </div>
@@ -51,7 +76,7 @@ const cartStore = useCartStore()
 
 const fetchMenu = async () => {
   try {
-    const response = await axios.get('/api/menu') // replace with your API
+    const response = await axios.get('/api/menu')
     menuItems.value = response.data
   } catch (err) {
     console.error('Failed to fetch menu', err)
@@ -72,6 +97,11 @@ const filterMenu = (cat) => {
 const addToCart = (item) => {
   cartStore.addItem(item)
 }
+
+const getPhotoUrl = (path) => {
+    if (!path) return null
+    return path.startsWith('http') ? path : `/${path}`
+}
 </script>
 
 <style scoped>
@@ -81,5 +111,13 @@ const addToCart = (item) => {
 @keyframes fadeIn {
   from { opacity: 0 }
   to { opacity: 1 }
+}
+/* Hide scrollbar for category list */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 </style>

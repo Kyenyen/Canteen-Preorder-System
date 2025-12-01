@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\HomeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/profile', [AuthController::class, 'updateProfile']);
     Route::put('/user/password', [AuthController::class, 'changePassword']);
 
+    Route::get('/home-data', [HomeController::class, 'index']);
     Route::get('/menu', [ProductController::class, 'index']);
     Route::get('/menu/{id}', [ProductController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);

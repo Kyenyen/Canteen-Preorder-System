@@ -4,14 +4,17 @@
     <div class="bg-white dark:bg-gray-800 px-6 py-8 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
       <div class="max-w-4xl mx-auto">
         <h2 class="text-3xl font-extrabold text-gray-800 dark:text-white mb-1">{{ greetingMessage }}</h2>
-        <p class="text-gray-500 dark:text-gray-400">What would you like to eat today?</p>
+        <p class="text-gray-500 dark:text-gray-400">
+            {{ isAdmin ? 'Ready to manage the kitchen?' : 'What would you like to eat today?' }}
+        </p>
       </div>
     </div>
 
     <div class="p-6 max-w-4xl mx-auto w-full space-y-8 pb-20">
-      <!-- Active Order Status Widget -->
+      
+      <!-- Active Order Status Widget (Student Only) -->
       <div
-        v-if="activeOrder"
+        v-if="activeOrder && !isAdmin"
         class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border-l-8 border-orange-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1"
         @click="$router.push('/history')"
       >
@@ -21,8 +24,8 @@
               <span class="h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
               <p class="text-xs font-bold text-orange-500 dark:text-orange-400 uppercase tracking-wider">Active Order</p>
             </div>
-            <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Order #{{ activeOrder.id }}</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ activeOrder.statusMessage }}</p>
+            <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Order #{{ activeOrder.order_id }}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Status: {{ activeOrder.status }}</p>
           </div>
           <div class="h-14 w-14 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center text-orange-600 dark:text-orange-400 text-2xl">
             <i class="fas fa-utensils"></i>
@@ -41,8 +44,10 @@
             <span class="bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block border border-white/30">Promo of the Day</span>
             <h3 class="text-3xl font-extrabold mb-2">{{ promo.title }}</h3>
             <p class="text-orange-100 mb-6 max-w-md text-sm leading-relaxed">{{ promo.description }}</p>
+            
             <button
-              @click="$router.push('/student')"
+              v-if="!isAdmin"
+              @click="$router.push('/menu')"
               class="bg-white text-orange-600 font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-gray-50 transition transform active:scale-95 flex items-center gap-2"
             >
               Order Now <i class="fas fa-arrow-right text-xs"></i>
@@ -53,18 +58,23 @@
       </div>
 
       <!-- Quick Shortcuts -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid gap-4" :class="isAdmin ? 'grid-cols-1' : 'grid-cols-2'">
+        
+        <!-- Menu Button (Dynamic for Admin/Student) -->
         <div
-          @click="$router.push('/menu')"
+          @click="goToMenu"
           class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-700 hover:shadow-md transition cursor-pointer group"
         >
           <div class="h-12 w-12 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 group-hover:scale-110 transition duration-300">
             <i class="fas fa-book-open text-xl"></i>
           </div>
-          <h4 class="font-bold text-gray-800 dark:text-white text-lg">Full Menu</h4>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Browse all available items</p>
+          <h4 class="font-bold text-gray-800 dark:text-white text-lg">{{ isAdmin ? 'Manage Menu' : 'Full Menu' }}</h4>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ isAdmin ? 'Edit items & prices' : 'Browse all available items' }}</p>
         </div>
+
+        <!-- Order History (Hidden for Admin) -->
         <div
+          v-if="!isAdmin"
           @click="$router.push('/history')"
           class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-700 hover:shadow-md transition cursor-pointer group"
         >
@@ -81,12 +91,17 @@
         <h3 class="font-bold text-gray-800 dark:text-white text-lg mb-4 flex items-center gap-2">
           <i class="fas fa-star text-yellow-400"></i> Popular Today
         </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div v-for="item in popularItems" :key="item.id" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <h4 class="font-bold text-gray-800 dark:text-white">{{ item.name }}</h4>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ item.description }}</p>
-            <p class="text-orange-600 dark:text-orange-400 font-bold mt-2">RM {{ item.price.toFixed(2) }}</p>
+        <div v-if="popularItems.length > 0" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div v-for="item in popularItems" :key="item.id" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 flex flex-col justify-between">
+            <div>
+                <h4 class="font-bold text-gray-800 dark:text-white">{{ item.name }}</h4>
+                <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">{{ item.description }}</p>
+            </div>
+            <p class="text-orange-600 dark:text-orange-400 font-bold mt-3">RM {{ Number(item.price).toFixed(2) }}</p>
           </div>
+        </div>
+        <div v-else class="text-gray-500 text-sm italic">
+            No popular items to display yet.
         </div>
       </div>
     </div>
@@ -94,25 +109,60 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../../js/stores/auth'
 
-const greetingMessage = ref('Welcome back!')
+const router = useRouter()
+const authStore = useAuthStore()
+
+// Check role
+const isAdmin = computed(() => authStore.user?.role === 'admin')
+const greetingMessage = computed(() => `Welcome back, ${authStore.user?.username || 'Student'}!`)
+
+// Initial State
 const activeOrder = ref(null)
 const promo = ref({
-  title: 'Nasi Lemak Special',
-  description: "Get 10% off when you pre-order before 10 AM. Don't miss out on the crowd favorite!"
+  title: 'Loading Promo...',
+  description: "Please wait while we fetch the latest deals."
 })
 const popularItems = ref([])
 
+const goToMenu = () => {
+    if (isAdmin.value) {
+        router.push('/admin/menu')
+    } else {
+        router.push('/menu')
+    }
+}
+
 const fetchHomeData = async () => {
   try {
-    // Replace with your API endpoint
     const response = await axios.get('/api/home-data')
-    activeOrder.value = response.data.activeOrder || null
-    popularItems.value = response.data.popularItems || []
+    
+    // 1. Update Active Order (Only if returned)
+    if (response.data.activeOrder) {
+        activeOrder.value = response.data.activeOrder
+    }
+
+    // 2. Update Popular Items
+    if (response.data.popularItems) {
+        popularItems.value = response.data.popularItems
+    }
+
+    // 3. Update Promo (Fix for "didn't change")
+    if (response.data.promo) {
+        promo.value = response.data.promo
+    }
+
   } catch (err) {
     console.error('Failed to fetch home data', err)
+    // Fallback if API fails
+    promo.value = {
+        title: 'UniCanteen Special',
+        description: "Enjoy delicious meals at student-friendly prices!"
+    }
   }
 }
 

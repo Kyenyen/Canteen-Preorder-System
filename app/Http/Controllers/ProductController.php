@@ -35,12 +35,15 @@ class ProductController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'category' => 'required|string|in:Breakfast,Lunch,Beverage', // Added Category
             'price' => 'required|numeric|min:0',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg',
             'description' => 'required|string',
             'is_available' => 'boolean'
         ], [
             'name.required' => 'Please enter the product name.',
+            'category.required' => 'Please select a category.',
+            'category.in' => 'Invalid category selected.',
             'price.required' => 'Please enter the price.',
             'price.numeric' => 'Price must be a number.',
             'price.min' => 'Price cannot be negative.',
@@ -72,6 +75,7 @@ class ProductController extends Controller
         $product = Product::create([
             'product_id' => $newId,
             'name' => $request->name,
+            'category' => $request->category, // Save Category
             'price' => $request->price,
             'photo' => $photoPath,
             'description' => $request->description,
@@ -88,6 +92,7 @@ class ProductController extends Controller
 
         $request->validate([
             'name' => 'sometimes|string|max:255',
+            'category' => 'sometimes|string|in:Breakfast,Lunch,Beverage', // Added Category Validation
             'price' => 'sometimes|numeric|min:0',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'sometimes|string',
@@ -116,6 +121,7 @@ class ProductController extends Controller
 
         // Update fields if present
         if ($request->has('name')) $product->name = $request->name;
+        if ($request->has('category')) $product->category = $request->category; // Update Category
         if ($request->has('price')) $product->price = $request->price;
         if ($request->has('description')) $product->description = $request->description;
         if ($request->has('is_available')) {

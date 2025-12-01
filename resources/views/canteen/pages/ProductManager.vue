@@ -19,8 +19,8 @@
           <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-gray-700">
             <tr>
               <th class="px-6 py-4">Image</th>
-              <th class="px-6 py-4">ID</th>
               <th class="px-6 py-4">Name</th>
+              <th class="px-6 py-4">Category</th> <!-- Added Category Column -->
               <th class="px-6 py-4">Price</th>
               <th class="px-6 py-4">Status</th>
               <th class="px-6 py-4 text-right">Actions</th>
@@ -35,12 +35,16 @@
                   <i v-else class="fas fa-utensils text-gray-400"></i>
                 </div>
               </td>
-              <!-- ID -->
-              <td class="px-6 py-4 font-mono text-xs">{{ product.product_id }}</td>
               <!-- Name & Desc -->
               <td class="px-6 py-4">
                 <div class="font-bold text-gray-900 dark:text-white">{{ product.name }}</div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{{ product.description }}</div>
+              </td>
+              <!-- Category -->
+              <td class="px-6 py-4">
+                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded-md">
+                    {{ product.category }}
+                </span>
               </td>
               <!-- Price -->
               <td class="px-6 py-4 font-medium">RM {{ Number(product.price).toFixed(2) }}</td>
@@ -73,7 +77,7 @@
 
     <!-- Product Modal (Add/Edit) -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4 fade-in backdrop-blur-sm">
-      <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 relative">
+      <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
         
         <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">
           {{ isEditing ? 'Edit Product' : 'Add New Product' }}
@@ -107,6 +111,16 @@
                 <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Price (RM)</label>
                 <input type="number" step="0.01" v-model="form.price" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
             </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Category</label>
+            <!-- FIX: Ensure v-model matches the reactive property -->
+            <select v-model="form.category" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+                <option value="Breakfast">Breakfast</option>
+                <option value="Lunch">Lunch</option>
+                <option value="Beverage">Beverage</option>
+            </select>
           </div>
 
           <div>
@@ -155,13 +169,12 @@ const form = reactive({
     name: '',
     price: '',
     description: '',
+    category: 'Lunch', // FIX 1: Initialized category
     is_available: true
 })
 
-// Fetch ALL products (requires Admin API logic)
 const fetchProducts = async () => {
     try {
-        // Appending ?all=true to let backend know we want everything including sold out
         const res = await axios.get('/api/menu?all=true') 
         products.value = res.data
     } catch (err) {
@@ -169,7 +182,6 @@ const fetchProducts = async () => {
     }
 }
 
-// Modal Logic
 const openModal = (product = null) => {
     if (product) {
         isEditing.value = true
@@ -177,6 +189,7 @@ const openModal = (product = null) => {
         form.name = product.name
         form.price = product.price
         form.description = product.description
+        form.category = product.category || 'Lunch' // Handle if missing
         form.is_available = Boolean(product.is_available)
         
         previewUrl.value = getPhotoUrl(product.photo)
@@ -186,6 +199,7 @@ const openModal = (product = null) => {
         form.name = ''
         form.price = ''
         form.description = ''
+        form.category = 'Lunch'
         form.is_available = true
         previewUrl.value = null
     }
@@ -197,14 +211,9 @@ const closeModal = () => {
     showModal.value = false
 }
 
-// FIX: Updated to work with files in 'public/products' folder
 const getPhotoUrl = (path) => {
     if (!path) return null
-    // If path starts with http, it's external.
     if (path.startsWith('http')) return path
-    
-    // If it comes from DB as 'products/image.jpg', we just need to append '/'
-    // We DO NOT prepend '/storage/' anymore because we moved to public folder saving.
     return `/${path}`
 }
 
@@ -218,7 +227,6 @@ const handleFileChange = (e) => {
     }
 }
 
-// CRUD Actions
 const saveProduct = async () => {
     loading.value = true
     try {
@@ -226,6 +234,10 @@ const saveProduct = async () => {
         data.append('name', form.name)
         data.append('price', form.price)
         data.append('description', form.description || '')
+        
+        // FIX 2: Append category to the form data
+        data.append('category', form.category) 
+        
         data.append('is_available', form.is_available ? '1' : '0')
         
         if (selectedFile.value) {
@@ -240,7 +252,7 @@ const saveProduct = async () => {
             await axios.post('/api/admin/products', data, config)
         }
 
-        await fetchProducts() // Refresh list
+        await fetchProducts() 
         closeModal()
     } catch (err) {
         console.error('Failed to save:', err.response?.data || err)
@@ -252,7 +264,6 @@ const saveProduct = async () => {
 
 const deleteProduct = async (id) => {
     if(!confirm('Are you sure you want to delete this item?')) return;
-    
     try {
         await axios.delete(`/api/admin/products/${id}`)
         products.value = products.value.filter(p => p.product_id !== id)
