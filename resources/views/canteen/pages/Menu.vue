@@ -3,7 +3,7 @@
     <!-- Menu Grid -->
     <div class="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900 w-full transition-colors duration-300">
       
-      <!-- Categories -->
+      <!-- Categories (Dynamic) -->
       <div class="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
         <button
           v-for="cat in categories"
@@ -28,9 +28,9 @@
              <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
                 <i class="fas fa-utensils text-4xl"></i>
              </div>
-             <!-- Category Badge -->
+             <!-- Category Badge (Fixed JSON Display) -->
              <span class="absolute top-3 left-3 bg-white/90 dark:bg-black/60 backdrop-blur text-xs font-bold px-2 py-1 rounded-md text-gray-800 dark:text-white uppercase tracking-wide">
-                {{ item.category }}
+                {{ typeof item.category === 'object' && item.category ? item.category.name : item.category }}
              </span>
           </div>
 
@@ -68,7 +68,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useCartStore } from '../../../js/stores/cart'
 import axios from 'axios'
 
-const categories = ['All', 'Breakfast', 'Lunch', 'Beverage']
 const currentCategory = ref('All')
 const menuItems = ref([])
 
@@ -85,9 +84,26 @@ const fetchMenu = async () => {
 
 onMounted(fetchMenu)
 
+// Dynamic Categories Calculation
+const categories = computed(() => {
+    const cats = new Set(['All'])
+    menuItems.value.forEach(item => {
+        if (item.category) {
+            // Handle if category is object (from backend relationship) or string
+            const name = typeof item.category === 'object' ? item.category.name : item.category;
+            cats.add(name);
+        }
+    })
+    return Array.from(cats)
+})
+
 const filteredMenu = computed(() => {
   if (currentCategory.value === 'All') return menuItems.value
-  return menuItems.value.filter(item => item.category === currentCategory.value)
+  
+  return menuItems.value.filter(item => {
+      const catName = typeof item.category === 'object' ? item.category.name : item.category;
+      return catName === currentCategory.value;
+  })
 })
 
 const filterMenu = (cat) => {

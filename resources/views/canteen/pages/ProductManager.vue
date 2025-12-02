@@ -1,18 +1,18 @@
 <template>
   <div class="min-h-screen w-full flex flex-col fade-in p-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
     
-    <!-- Header and Add Button -->
+    <!-- Header -->
     <div class="max-w-6xl mx-auto w-full mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
       <div>
         <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Menu Management</h1>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">Add, edit, or remove items from the canteen menu (Admin Only).</p>
+        <p class="text-gray-500 dark:text-gray-400 text-sm">Add, edit, or remove items from the canteen menu.</p>
       </div>
       <button @click="openModal()" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg transition transform active:scale-95 flex items-center gap-2 font-bold" :disabled="loadingCategories">
         <i class="fas fa-plus"></i> Add New Item
       </button>
     </div>
 
-    <!-- Notification Area -->
+    <!-- Global Notification (Success/General info only) -->
     <div v-if="notification.message" 
         class="max-w-6xl mx-auto w-full mb-4 p-4 border-l-4 rounded-lg shadow-md transition-all duration-300"
         :class="notification.type === 'success' ? 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300' : 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300'">
@@ -43,6 +43,7 @@
             </tr>
             <tr v-for="product in products" :key="product.product_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
               
+              <!-- Image -->
               <td class="px-6 py-4">
                 <div class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-600 overflow-hidden flex items-center justify-center border border-gray-200 dark:border-gray-600">
                   <img v-if="product.photo" :src="getPhotoUrl(product.photo)" class="w-full h-full object-cover">
@@ -50,19 +51,24 @@
                 </div>
               </td>
               
+              <!-- Name & Desc -->
               <td class="px-6 py-4">
                 <div class="font-bold text-gray-900 dark:text-white">{{ product.name }}</div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{{ product.description }}</div>
               </td>
               
+              <!-- Category (FIXED DISPLAY) -->
               <td class="px-6 py-4">
                 <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold rounded-md">
-                    {{ product.category }}
+                    <!-- Check if category is object (from relationship) or string -->
+                    {{ typeof product.category === 'object' && product.category ? product.category.name : product.category }}
                 </span>
               </td>
               
+              <!-- Price -->
               <td class="px-6 py-4 font-medium">RM {{ Number(product.price).toFixed(2) }}</td>
               
+              <!-- Status -->
               <td class="px-6 py-4">
                 <span v-if="product.is_available" class="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs font-bold rounded-full">
                   Available
@@ -72,6 +78,7 @@
                 </span>
               </td>
               
+              <!-- Actions -->
               <td class="px-6 py-4 text-right flex justify-end gap-2">
                 <button @click="openModal(product)" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition" title="Edit">
                   <i class="fas fa-edit"></i>
@@ -86,7 +93,7 @@
       </div>
     </div>
 
-    <!-- Add/Edit Modal -->
+    <!-- Product Modal (Add/Edit) -->
     <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4 fade-in backdrop-blur-sm">
       <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
         
@@ -94,9 +101,16 @@
           {{ isEditing ? 'Edit Product' : 'Add New Product' }}
         </h3>
 
-        
+        <!-- NEW: Modal Error Alert (Displayed here instead of above table) -->
+        <div v-if="modalError" class="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm rounded-lg flex items-start gap-2 whitespace-pre-line text-left">
+            <i class="fas fa-exclamation-circle mt-0.5"></i>
+            <span>{{ modalError }}</span>
+        </div>
+
+        <!-- Form -->
         <form @submit.prevent="saveProduct" class="space-y-4">
           
+          <!-- Image Upload Preview -->
           <div class="flex justify-center mb-4">
             <div class="relative w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-500 hover:border-orange-500 transition cursor-pointer group" @click="triggerFileInput">
                 <img v-if="previewUrl" :src="previewUrl" class="w-full h-full object-cover">
@@ -104,7 +118,6 @@
                     <i class="fas fa-camera text-2xl mb-1"></i>
                     <span class="text-xs">Upload Photo</span>
                 </div>
-                
                 <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <i class="fas fa-edit text-white"></i>
                 </div>
@@ -140,7 +153,7 @@
             <textarea v-model="form.description" rows="3" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
           </div>
 
-          
+          <!-- Availability Toggle -->
           <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
             <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Is Available?</span>
             <label class="relative inline-flex items-center cursor-pointer ml-auto">
@@ -190,7 +203,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
-import '@fortawesome/fontawesome-free/css/all.css' // Import Font Awesome
+import '@fortawesome/fontawesome-free/css/all.css' 
 
 // State
 const products = ref([])
@@ -203,25 +216,22 @@ const fileInput = ref(null)
 const previewUrl = ref(null)
 const selectedFile = ref(null)
 
-// Delete Confirmation State
 const showDeleteModal = ref(false) 
 const productToDelete = reactive({ id: null, name: '' }) 
 const notification = reactive({ message: null, type: 'success' })
+const modalError = ref('') // NEW: Tracks errors specific to the modal form
 
 const form = reactive({
     id: null,
     name: '',
     price: '',
     description: '',
-    category_id: '', // Stores the category ID
+    category_id: '', 
     is_available: true
 })
 
 // --- Methods ---
 
-/**
- * Displays a notification message.
- */
 const showNotification = (message, type = 'success') => {
     notification.message = message
     notification.type = type
@@ -230,10 +240,6 @@ const showNotification = (message, type = 'success') => {
     }, 5000)
 }
 
-
-/**
- * Fetches all categories from the API.
- */
 const fetchCategories = async () => {
     loadingCategories.value = true
     try {
@@ -247,11 +253,9 @@ const fetchCategories = async () => {
     }
 }
 
-
 const fetchProducts = async () => {
     loading.value = true;
     try {
-        // Fetch all products for admin view
         const res = await axios.get('/api/menu?all=true') 
         products.value = res.data
     } catch (err) {
@@ -263,7 +267,9 @@ const fetchProducts = async () => {
 }
 
 const openModal = (product = null) => {
-    // Determine the default category ID (usually the first one loaded)
+    // Reset modal error on open
+    modalError.value = '';
+    
     const defaultCategoryId = categories.value.length > 0 ? categories.value[0].category_id : '';
 
     if (product) {
@@ -273,13 +279,16 @@ const openModal = (product = null) => {
         form.price = product.price
         form.description = product.description
         
-        // Find the category ID by matching the product's category name (assuming product has 'category' name property)
-        const matchingCategory = categories.value.find(c => c.name === product.category);
+        // Handle category logic (object vs ID)
+        if (typeof product.category === 'object' && product.category) {
+             form.category_id = product.category.category_id;
+        } else {
+             // Fallback if it's a string name or ID
+             const matchingCategory = categories.value.find(c => c.name === product.category || c.category_id === product.category);
+             form.category_id = matchingCategory ? matchingCategory.category_id : defaultCategoryId;
+        }
         
-        // Set form.category_id to the found ID or the default if not found
-        form.category_id = matchingCategory ? matchingCategory.category_id : defaultCategoryId;
         form.is_available = Boolean(product.is_available)
-        
         previewUrl.value = getPhotoUrl(product.photo)
     } else {
         isEditing.value = false
@@ -287,7 +296,7 @@ const openModal = (product = null) => {
         form.name = ''
         form.price = ''
         form.description = ''
-        form.category_id = defaultCategoryId // Set default category ID for new product
+        form.category_id = defaultCategoryId 
         form.is_available = true
         previewUrl.value = null
     }
@@ -302,7 +311,6 @@ const closeModal = () => {
 const getPhotoUrl = (path) => {
     if (!path) return null
     if (path.startsWith('http')) return path
-    // Assumes photos are served from the root if not full URL
     return `/${path}`
 }
 
@@ -318,10 +326,10 @@ const handleFileChange = (e) => {
 
 const saveProduct = async () => {
     loading.value = true
+    modalError.value = '' // Clear error state
     
-    // Check if categories were loaded successfully
     if (categories.value.length === 0 && !isEditing.value) {
-         showNotification('Cannot create product. Categories failed to load.', 'error');
+         modalError.value = 'Cannot create product. Categories failed to load.';
          loading.value = false;
          return;
     }
@@ -331,7 +339,6 @@ const saveProduct = async () => {
         data.append('name', form.name)
         data.append('price', form.price)
         data.append('description', form.description || '')
-        // IMPORTANT: Sending the category ID with the key 'category_id' to match backend validation
         data.append('category_id', form.category_id) 
         data.append('is_available', form.is_available ? '1' : '0')
         
@@ -343,45 +350,46 @@ const saveProduct = async () => {
         let res;
 
         if (isEditing.value) {
-            // Use POST with _method=PUT to handle file uploads in updates for Laravel
-            data.append('_method', 'POST'); 
+            data.append('_method', 'POST'); // Standard Laravel workaround for PUT files
             res = await axios.post(`/api/admin/products/${form.id}`, data, config)
         } else {
             res = await axios.post('/api/admin/products', data, config)
         }
 
-        showNotification(res.data.message || (isEditing.value ? 'Product updated successfully.' : 'Product created successfully.'), 'success')
+        // Show Success
+        showNotification(res.data.message || (isEditing.value ? 'Product updated.' : 'Product created.'), 'success')
         await fetchProducts() 
         closeModal()
     } catch (err) {
         console.error('Failed to save:', err.response?.data || err)
-        const errorMsg = err.response?.data?.message || 'Unknown error during product save.'
-        showNotification(errorMsg, 'error')
+        
+        // Extract validation messages
+        if (err.response && err.response.data && err.response.data.errors) {
+            modalError.value = Object.values(err.response.data.errors).flat().join('\n');
+        } else if (err.response?.data?.message) {
+            modalError.value = err.response.data.message;
+        } else {
+            modalError.value = 'Unknown error during product save.';
+        }
     } finally {
         loading.value = false
     }
 }
 
-/**
- * Opens the delete confirmation modal. 
- */
 const deleteProduct = (id, name) => {
     productToDelete.id = id;
     productToDelete.name = name;
     showDeleteModal.value = true;
 }
 
-/**
- * Sends a DELETE request after modal confirmation.
- */
 const confirmDelete = async () => {
     const id = productToDelete.id;
     loading.value = true
-    showDeleteModal.value = false // Close modal immediately
+    showDeleteModal.value = false 
     try {
         const res = await axios.delete(`/api/admin/products/${id}`)
         showNotification(res.data.message || 'Product deleted successfully.', 'success')
-        await fetchProducts() // Re-fetch the list
+        await fetchProducts() 
     } catch (err) {
         console.error('Failed to delete:', err.response?.data || err)
         const errorMsg = err.response?.data?.message || 'Deletion failed. Check console for details.'

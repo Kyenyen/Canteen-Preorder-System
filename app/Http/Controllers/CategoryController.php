@@ -56,7 +56,7 @@ class CategoryController extends Controller
         $category = Category::create([
             'category_id' => $newId,
             'name' => $request->name,
-            'quantity' => 0, // Default to 0, which aligns with the migration file
+            'quantity' => 0,
         ]);
 
         return response()->json(['message' => 'Category created successfully', 'category' => $category], 201);
