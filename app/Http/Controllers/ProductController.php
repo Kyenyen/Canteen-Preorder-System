@@ -8,42 +8,56 @@ use Illuminate\Support\Facades\File; // Required for unlink/file operations
 
 class ProductController extends Controller
 {
-    // 1. Get All Products
+    /**
+     * 1. Get All Products.
+     * Eager loads the related Category model.
+     */
     public function index(Request $request)
     {
+        // Start query, eager load the category relationship
+        $query = Product::with('category'); 
+
         // Check if the user is an Admin asking for all items
         if ($request->has('all') && $request->user() && $request->user()->role === 'admin') {
-            return response()->json(Product::all());
+            return response()->json($query->get());
         }
 
         // Default: Only show available items
         return response()->json(
-            Product::where('is_available', 1)->get()
+            $query->where('is_available', 1)->get()
         );
     }
 
-    // 2. Get Single Product
+    /**
+     * 2. Get Single Product.
+     * Eager loads the related Category model.
+     */
     public function show($id)
     {
         return response()->json(
-            Product::where('product_id', $id)->firstOrFail()
+            Product::with('category')->where('product_id', $id)->firstOrFail()
         );
     }
 
-    // 3. Create New Product (Admin)
+    /**
+     * 3. Create New Product (Admin).
+     */
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'required|string|in:Breakfast,Lunch,Beverage', // Added Category
+            // --- UPDATED: Validating category_id instead of category name ---
+            'category_id' => 'required|string|size:5|exists:categories,category_id',
+            // -----------------------------------------------------------------
             'price' => 'required|numeric|min:0',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg',
             'description' => 'required|string',
             'is_available' => 'boolean'
         ], [
             'name.required' => 'Please enter the product name.',
-            'category.required' => 'Please select a category.',
-            'category.in' => 'Invalid category selected.',
+            'category_id.required' => 'Please select a category ID.',
+            'category_id.size' => 'Category ID must be 5 characters long.',
+            'category_id.exists' => 'The selected category ID is invalid.',
             'price.required' => 'Please enter the price.',
             'price.numeric' => 'Price must be a number.',
             'price.min' => 'Price cannot be negative.',
@@ -75,24 +89,33 @@ class ProductController extends Controller
         $product = Product::create([
             'product_id' => $newId,
             'name' => $request->name,
-            'category' => $request->category, // Save Category
+            // --- UPDATED: Using category_id ---
+            'category_id' => $request->category_id, 
+            // -----------------------------------
             'price' => $request->price,
             'photo' => $photoPath,
             'description' => $request->description,
             'is_available' => filter_var($request->is_available, FILTER_VALIDATE_BOOLEAN),
         ]);
 
+        // Eager load category for consistent response format
+        $product->load('category');
+
         return response()->json(['message' => 'Product created', 'product' => $product], 201);
     }
 
-    // 4. Update Product (Admin)
+    /**
+     * 4. Update Product (Admin).
+     */
     public function updateProduct(Request $request, $id)
     {
         $product = Product::where('product_id', $id)->firstOrFail();
 
         $request->validate([
             'name' => 'sometimes|string|max:255',
-            'category' => 'sometimes|string|in:Breakfast,Lunch,Beverage', // Added Category Validation
+            // --- UPDATED: Validating category_id instead of category name ---
+            'category_id' => 'sometimes|string|size:5|exists:categories,category_id', 
+            // -----------------------------------------------------------------
             'price' => 'sometimes|numeric|min:0',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'sometimes|string',
@@ -105,7 +128,7 @@ class ProductController extends Controller
             'photo.max' => 'Image size must not exceed 2MB.',
         ]);
 
-        // Handle Photo Replacement (FIXED: Uses public path logic to match store)
+        // Handle Photo Replacement
         if ($request->hasFile('photo')) {
             // Delete old photo if it exists in public folder
             if ($product->photo && file_exists(public_path($product->photo))) {
@@ -121,7 +144,9 @@ class ProductController extends Controller
 
         // Update fields if present
         if ($request->has('name')) $product->name = $request->name;
-        if ($request->has('category')) $product->category = $request->category; // Update Category
+        // --- UPDATED: Checking and setting category_id ---
+        if ($request->has('category_id')) $product->category_id = $request->category_id;
+        // --------------------------------------------------
         if ($request->has('price')) $product->price = $request->price;
         if ($request->has('description')) $product->description = $request->description;
         if ($request->has('is_available')) {
@@ -130,15 +155,20 @@ class ProductController extends Controller
 
         $product->save();
 
+        // Eager load category for consistent response format
+        $product->load('category');
+
         return response()->json(['message' => 'Product updated', 'product' => $product]);
     }
 
-    // 5. Delete Product (Admin)
+    /**
+     * 5. Delete Product (Admin).
+     */
     public function destroy($id)
     {
         $product = Product::where('product_id', $id)->firstOrFail();
 
-        // Delete photo from public folder (FIXED: Uses public path logic)
+        // Delete photo from public folder
         if ($product->photo && file_exists(public_path($product->photo))) {
             unlink(public_path($product->photo));
         }

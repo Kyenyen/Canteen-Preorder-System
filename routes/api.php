@@ -7,6 +7,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,9 @@ use App\Http\Controllers\HomeController;
 | Here is where you can register API routes for your application. These
 | routes are loaded by the RouteServiceProvider and all of them will
 | be assigned to the "api" middleware group. Make something great!
+|
+| NOTE: The resourceful route for 'categories' has been replaced 
+| with explicit routes for index, show, store, update, and destroy.
 |
 */
 
@@ -41,11 +45,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Admin Routes
-    Route::middleware('role:admin')->prefix('admin')->group(function () {
-        Route::get('/orders', [OrderController::class, 'indexAdmin']);
-        Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
-        Route::post('/products', [ProductController::class, 'store']);
-        Route::post('/products/{id}', [ProductController::class, 'updateProduct']);
-        Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+    Route::middleware('role:admin')->group(function () {
+        
+        // Admin Product and Order Management (with /admin prefix)
+        Route::prefix('admin')->group(function () {
+            Route::get('/orders', [OrderController::class, 'indexAdmin']);
+            Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+            Route::post('/products', [ProductController::class, 'store']);
+            Route::post('/products/{id}', [ProductController::class, 'updateProduct']);
+            Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+        });
+
+        Route::get('categories', [CategoryController::class, 'index']);
+        Route::get('categories/{id}', [CategoryController::class, 'show']);
+        Route::post('categories', [CategoryController::class, 'store']);
+        Route::put('categories/{id}', [CategoryController::class, 'updateCategory']);
+        Route::delete('categories/{id}', [CategoryController::class, 'destroy']);
     });
 });

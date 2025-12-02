@@ -156,8 +156,16 @@ onMounted(async () => {
 })
 
 const getAvatarUrl = (path) => {
-    if (!path || typeof path !== 'string') return null
-    return path.startsWith('http') ? path : `/storage/${path}`
+    if (!path) return null
+    if (path.startsWith('http')) {
+        return path
+    }
+
+    if (path.includes('photos/')) {
+        return `/${path}` 
+    }
+    
+    return `/storage/${path}`
 }
 
 const triggerFileInput = () => {

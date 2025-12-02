@@ -34,7 +34,7 @@ class HomeController extends Controller
 
         if ($promoProduct) {
             $data['promo'] = [
-                'title' => $promoProduct->name . ' Special',
+                'title' => $promoProduct->name,
                 'description' => "Today's highlight! Enjoy our delicious " . $promoProduct->name . " for only RM " . number_format($promoProduct->price, 2) . ". Order now before it runs out!",
             ];
         } else {
