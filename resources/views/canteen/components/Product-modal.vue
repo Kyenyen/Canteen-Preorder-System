@@ -12,15 +12,16 @@
         </button>
 
         <!-- Product Image Header -->
-        <!-- Dynamic background color based on product color if available, default to orange -->
-        <div class="h-64 flex items-center justify-center text-8xl relative shrink-0" 
-             :class="product.bgColor || 'bg-orange-50 dark:bg-gray-700'">
+        <div class="h-64 flex items-center justify-center relative shrink-0 bg-gray-100 dark:bg-gray-700 overflow-hidden">
             
-            <!-- Product Icon -->
-            <i :class="[product.icon, product.textColor || 'text-orange-500']" class="relative z-10 drop-shadow-md"></i>
+            <!-- Product Photo or Icon -->
+            <div v-if="product.photoUrl" class="w-full h-full">
+                <img :src="product.photoUrl" class="w-full h-full object-cover" :alt="product.name">
+            </div>
+            <i v-else :class="[product.icon, product.textColor || 'text-orange-500']" class="text-8xl relative z-10 drop-shadow-md"></i>
             
             <!-- Gradient Overlay -->
-            <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent dark:from-black/80"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
         </div>
 
         <!-- Content (Scrollable) -->

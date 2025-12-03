@@ -22,9 +22,12 @@
         <!-- Menu Item Card -->
         <div v-for="item in filteredMenu" :key="item.product_id" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition">
           
-          <!-- Image -->
-          <div class="h-48 w-full bg-gray-100 dark:bg-gray-700 relative">
-             <img v-if="item.photo" :src="getPhotoUrl(item.photo)" class="w-full h-full object-cover">
+          <!-- Image - Clickable to view details -->
+          <div 
+            @click="openProductDetails(item)"
+            class="h-48 w-full bg-gray-100 dark:bg-gray-700 relative cursor-pointer group"
+          >
+             <img v-if="item.photo" :src="getPhotoUrl(item.photo)" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
              <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
                 <i class="fas fa-utensils text-4xl"></i>
              </div>
@@ -32,13 +35,24 @@
              <span class="absolute top-3 left-3 bg-white/90 dark:bg-black/60 backdrop-blur text-xs font-bold px-2 py-1 rounded-md text-gray-800 dark:text-white uppercase tracking-wide">
                 {{ typeof item.category === 'object' && item.category ? item.category.name : item.category }}
              </span>
+             <!-- View Details Overlay -->
+             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+               <span class="text-white opacity-0 group-hover:opacity-100 transition-opacity font-semibold text-sm">
+                 <i class="fas fa-eye mr-2"></i>View Details
+               </span>
+             </div>
           </div>
 
           <!-- Content -->
           <div class="p-4 flex flex-col flex-1">
             <div class="flex-1">
                 <div class="flex justify-between items-start mb-1">
-                    <h4 class="font-bold text-gray-800 dark:text-white text-lg leading-tight">{{ item.name }}</h4>
+                    <h4 
+                      @click="openProductDetails(item)"
+                      class="font-bold text-gray-800 dark:text-white text-lg leading-tight cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition"
+                    >
+                      {{ item.name }}
+                    </h4>
                 </div>
                 <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{{ item.description }}</p>
             </div>
@@ -112,6 +126,14 @@
       :message="notification.message"
       @close="notification.show = false"
     />
+
+    <!-- Product Details Modal -->
+    <ProductModal
+      :isOpen="isProductModalOpen"
+      :product="selectedProduct"
+      @close="closeProductDetails"
+      @add-to-tray="handleAddFromModal"
+    />
   </div>
 </template>
 
@@ -120,11 +142,14 @@ import { ref, computed, onMounted, inject } from 'vue'
 import { useCartStore } from '../../../js/stores/cart'
 import axios from 'axios'
 import Notification from '../components/Notification.vue'
+import ProductModal from '../components/Product-modal.vue'
 
 const currentCategory = ref('All')
 const menuItems = ref([])
 const pendingUpdates = ref({}) // Track pending quantity updates
 const updateTimeouts = ref({}) // Track debounce timeouts
+const isProductModalOpen = ref(false)
+const selectedProduct = ref(null)
 
 const cartStore = useCartStore()
 const toggleCart = inject('toggleCart')
@@ -288,6 +313,41 @@ const addToCart = async (item) => {
 const getPhotoUrl = (path) => {
     if (!path) return null
     return path.startsWith('http') ? path : `/${path}`
+}
+
+const openProductDetails = (item) => {
+  selectedProduct.value = {
+    id: item.product_id,
+    name: item.name,
+    price: item.price,
+    description: item.description,
+    category: typeof item.category === 'object' ? item.category.name : item.category,
+    photo: item.photo,
+    photoUrl: getPhotoUrl(item.photo),
+    icon: 'fas fa-utensils',
+    bgColor: 'bg-orange-50 dark:bg-gray-700',
+    textColor: 'text-orange-500'
+  }
+  isProductModalOpen.value = true
+}
+
+const closeProductDetails = () => {
+  isProductModalOpen.value = false
+  selectedProduct.value = null
+}
+
+const handleAddFromModal = async (data) => {
+  try {
+    const item = menuItems.value.find(i => i.product_id === data.product.id)
+    if (item) {
+      await cartStore.addItem(item, data.quantity)
+      showNotification('success', 'Added to cart!', `${data.product.name} (x${data.quantity}) added successfully`)
+    }
+  } catch (error) {
+    console.error('Failed to add item to cart:', error)
+    const errorMsg = error.response?.data?.message || 'Failed to add item to cart'
+    showNotification('error', 'Error', errorMsg)
+  }
 }
 </script>
 
