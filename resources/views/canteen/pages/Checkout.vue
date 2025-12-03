@@ -146,7 +146,7 @@ const pickupTimes = ['11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM'] 
 
 const diningOptions = [
   { value: 'takeaway', label: 'Takeaway', subtitle: 'Grab and go', icon: 'fas fa-bag-shopping' },
-  { value: 'dinein', label: 'Dine In', subtitle: 'Eat at canteen', icon: 'fas fa-chair' }
+  { value: 'dine-in', label: 'Dine-In', subtitle: 'Eat at canteen', icon: 'fas fa-chair' }
 ]
 
 const paymentMethods = [
