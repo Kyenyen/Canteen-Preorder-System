@@ -60,7 +60,6 @@
 
             <!-- Action Footer -->
             <button @click="addToTray" class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 text-lg flex items-center justify-center gap-3">
-                <i class="fas fa-plus"></i> 
                 <span>Add to Tray - RM {{ formatPrice(totalPrice) }}</span>
             </button>
         </div>

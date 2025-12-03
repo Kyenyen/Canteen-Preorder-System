@@ -13,15 +13,16 @@
     <!-- Footer -->
     <FooterComponent />
 
-    <!-- Cart Component (Global) -->
-    <CartComponent ref="cartRef" />
+    <!-- Cart Component (Global) - Hidden on checkout page -->
+    <CartComponent v-if="showCart" ref="cartRef" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, provide } from 'vue'
+import { ref, onMounted, provide, computed } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from './stores/auth'
+import { useRoute } from 'vue-router'
 
 import HeaderComponent from '../views/canteen/components/Navigation.vue'
 import FooterComponent from '../views/canteen/components/Footer.vue'
@@ -29,6 +30,10 @@ import CartComponent from '../views/canteen/components/Cart.vue'
 
 const authStore = useAuthStore()
 const cartRef = ref(null)
+const route = useRoute()
+
+// Hide cart on checkout page
+const showCart = computed(() => route.path !== '/checkout')
 
 // Global notification state
 const notificationState = ref({

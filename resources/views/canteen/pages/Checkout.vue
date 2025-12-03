@@ -22,9 +22,15 @@
           </button>
         </div>
         <div class="space-y-3">
-          <div v-for="item in cartItems" :key="item.id" class="flex justify-between">
-            <span>{{ item.name }} x {{ item.quantity }}</span>
-            <span>RM {{ (item.price * item.quantity).toFixed(2) }}</span>
+          <div v-for="item in cartItems" :key="item.id" class="flex justify-between items-center">
+            <div class="flex-1">
+              <p class="font-semibold text-gray-800 dark:text-white">{{ item.name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">RM {{ item.price.toFixed(2) }} × {{ item.qty }}</p>
+            </div>
+            <span class="font-bold text-gray-800 dark:text-white">RM {{ (item.price * item.qty).toFixed(2) }}</span>
+          </div>
+          <div v-if="cartItems.length === 0" class="text-center text-gray-400 dark:text-gray-500 py-4">
+            Your cart is empty
           </div>
         </div>
       </div>
@@ -36,6 +42,24 @@
           Note (Optional)
         </h2>
         <textarea v-model="note" rows="3" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none dark:text-white resize-none" placeholder="E.g., No onions, extra spicy, separate packaging..."></textarea>
+      </div>
+
+      <!-- Dining Option Section -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-4">
+        <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+          <i class="fas fa-utensils text-orange-600"></i>
+          Dining Option
+        </h2>
+        <div class="space-y-2">
+          <label v-for="option in diningOptions" :key="option.value" class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:border-orange-500 dark:hover:border-orange-500 transition bg-gray-50 dark:bg-gray-700 group">
+            <input type="radio" name="dining_option" v-model="diningOption" :value="option.value" class="w-4 h-4 text-orange-600 focus:ring-orange-500 border-gray-300">
+            <div class="ml-3 flex-1">
+              <span class="block text-sm font-bold text-gray-800 dark:text-white">{{ option.label }}</span>
+              <span v-if="option.subtitle" class="block text-xs text-gray-500 dark:text-gray-400">{{ option.subtitle }}</span>
+            </div>
+            <i :class="option.icon" class="text-gray-400 group-hover:text-orange-500"></i>
+          </label>
+        </div>
       </div>
 
       <!-- Pickup Time Section -->
@@ -91,7 +115,11 @@
     <!-- Fixed Bottom Action -->
     <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-lg">
       <div class="max-w-4xl mx-auto">
-        <button @click="placeOrder" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+        <button 
+          @click="placeOrder" 
+          :disabled="cartItems.length === 0 || !pickupTime"
+          class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <i class="fas fa-shopping-cart"></i>
           <span>Place Order</span>
         </button>
@@ -101,7 +129,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCartStore } from '../../../js/stores/cart'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
@@ -109,12 +137,17 @@ import axios from 'axios'
 const router = useRouter()
 const cartStore = useCartStore()
 
-const cartItems = ref(cartStore.items)
 const note = ref('')
-const pickupTime = ref('')
+const pickupTime = ref('11:00 AM') // Set default pickup time
 const paymentMethod = ref('ewallet')
+const diningOption = ref('takeaway') // Set default dining option
 
 const pickupTimes = ['11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM'] // example
+
+const diningOptions = [
+  { value: 'takeaway', label: 'Takeaway', subtitle: 'Grab and go', icon: 'fas fa-bag-shopping' },
+  { value: 'dinein', label: 'Dine In', subtitle: 'Eat at canteen', icon: 'fas fa-chair' }
+]
 
 const paymentMethods = [
   { value: 'ewallet', label: 'TARC eWallet', subtitle: 'Balance: RM 50.00', icon: 'fas fa-wallet' },
@@ -122,27 +155,56 @@ const paymentMethods = [
   { value: 'card', label: 'Credit / Debit Card', subtitle: '', icon: 'fas fa-credit-card' }
 ]
 
-const subtotal = computed(() => cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0))
+// Use computed to get real-time cart items from store
+const cartItems = computed(() => cartStore.items)
+
+const subtotal = computed(() => cartStore.subtotal)
 const total = computed(() => subtotal.value) // add tax/fees if needed
+
+onMounted(() => {
+  // Fetch latest cart data
+  cartStore.fetchCart()
+  
+  // Redirect to menu if cart is empty
+  if (cartStore.items.length === 0) {
+    router.push('/menu')
+  }
+})
 
 const goBack = () => {
   router.push('/menu') // go back to menu page
 }
 
 const placeOrder = async () => {
+  if (!pickupTime.value) {
+    alert('Please select a pickup time')
+    return
+  }
+
   try {
     const payload = {
-      items: cartItems.value,
+      items: cartItems.value.map(item => ({
+        product_id: item.id,
+        quantity: item.qty,
+        price: item.price
+      })),
       note: note.value,
       pickup_time: pickupTime.value,
       payment_method: paymentMethod.value,
+      dining_option: diningOption.value,
       total: total.value
     }
-    await axios.post('/api/orders', payload)
-    cartStore.clearCart()
+    
+    const response = await axios.post('/api/orders', payload)
+    
+    // Clear cart after successful order
+    await cartStore.clearCart()
+    
+    // Navigate to order confirmation or home
     router.push('/home')
   } catch (err) {
     console.error('Failed to place order', err)
+    alert(err.response?.data?.message || 'Failed to place order. Please try again.')
   }
 }
 </script>

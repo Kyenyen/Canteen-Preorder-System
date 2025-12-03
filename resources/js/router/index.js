@@ -6,6 +6,7 @@ import Login from '../../views/canteen/pages/Login.vue'
 import Register from '../../views/canteen/pages/Register.vue'
 import Home from '../../views/canteen/pages/Home.vue'
 import Menu from '../../views/canteen/pages/Menu.vue'
+import Checkout from '../../views/canteen/pages/Checkout.vue'
 import History from '../../views/canteen/pages/History.vue'
 import Admin from '../../views/canteen/pages/Admin.vue'
 import ProductManager from '../../views/canteen/pages/ProductManager.vue'
@@ -35,6 +36,11 @@ const routes = [
         path: '/menu', 
         component: Menu, 
         meta: { requiresAuth: true, title: 'Menu' } 
+    },
+    { 
+        path: '/checkout', 
+        component: Checkout, 
+        meta: { requiresAuth: true, title: 'Checkout' } 
     },
     { 
         path: '/history', 
