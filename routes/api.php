@@ -29,6 +29,10 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/reset-password', [AuthController::class, 'reset']);
 
+// Public Menu Routes (no auth required)
+Route::get('/menu', [ProductController::class, 'index']);
+Route::get('/menu/{id}', [ProductController::class, 'show']);
+
 // Order Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {return $request->user();});
@@ -36,13 +40,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user/password', [AuthController::class, 'changePassword']);
 
     Route::get('/home-data', [HomeController::class, 'index']);
-    Route::get('/menu', [ProductController::class, 'index']);
-    Route::get('/menu/{id}', [ProductController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/history', [OrderController::class, 'index']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Cart Routes
+    Route::get('/cart', [App\Http\Controllers\CartController::class, 'index']);
+    Route::post('/cart', [App\Http\Controllers\CartController::class, 'store']);
+    Route::put('/cart/{productId}', [App\Http\Controllers\CartController::class, 'update']);
+    Route::delete('/cart/{productId}', [App\Http\Controllers\CartController::class, 'destroy']);
+    Route::delete('/cart', [App\Http\Controllers\CartController::class, 'clear']);
 
     // Admin Routes
     Route::middleware('role:admin')->group(function () {

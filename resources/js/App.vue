@@ -12,18 +12,41 @@
 
     <!-- Footer -->
     <FooterComponent />
+
+    <!-- Cart Component (Global) -->
+    <CartComponent ref="cartRef" />
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from './stores/auth'
 
 import HeaderComponent from '../views/canteen/components/Navigation.vue'
 import FooterComponent from '../views/canteen/components/Footer.vue'
+import CartComponent from '../views/canteen/components/Cart.vue'
 
 const authStore = useAuthStore()
+const cartRef = ref(null)
+
+// Global notification state
+const notificationState = ref({
+  show: false,
+  type: 'success',
+  title: '',
+  message: ''
+})
+
+// Provide cart toggle function globally
+provide('toggleCart', () => {
+  if (cartRef.value) {
+    cartRef.value.toggleCart()
+  }
+})
+
+// Provide notification state globally
+provide('notificationState', notificationState)
 
 onMounted(async () => {
   if (authStore.token) {

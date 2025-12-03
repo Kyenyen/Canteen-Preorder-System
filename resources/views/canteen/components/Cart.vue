@@ -66,7 +66,11 @@
   <!-- Floating Cart Button -->
   <button
     @click="toggleCart"
-    class="fixed bottom-6 right-6 bg-orange-600 hover:bg-orange-700 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center z-30 active:scale-90 transition-all duration-300 hover:scale-105 dark:shadow-orange-900/50"
+    :class="[
+      'fixed right-6 bg-orange-600 hover:bg-orange-700 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center z-30 active:scale-90 hover:scale-105 dark:shadow-orange-900/50',
+      'transition-all duration-300 ease-in-out cart-button'
+    ]"
+    :style="{ bottom: cartButtonBottom }"
   >
     <div class="relative">
       <i class="fas fa-basket-shopping text-2xl"></i>
@@ -81,14 +85,37 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useCartStore } from '../stores/cart'
+import { ref, onMounted, inject, watch } from 'vue'
+import { useCartStore } from '../../../js/stores/cart'
 import { useRouter } from 'vue-router'
 
 const cart = useCartStore()
 const router = useRouter()
 
 const isOpen = ref(false)
+const cartButtonBottom = ref('1.5rem') // Default bottom position (6 = 1.5rem)
+
+// Inject notification state from parent
+const notificationState = inject('notificationState', null)
+
+// Watch for notification visibility and adjust cart button position
+if (notificationState) {
+  watch(() => notificationState.value.show, (isNotificationVisible) => {
+    if (isNotificationVisible) {
+      // Move cart button up when notification appears (notification height ~80px + gap)
+      cartButtonBottom.value = '120px'
+    } else {
+      // Return to original position when notification disappears
+      cartButtonBottom.value = '1.5rem'
+    }
+  })
+}
+
+onMounted(() => {
+  // Fetch cart when component mounts
+  cart.fetchCart()
+})
+
 const toggleCart = () => {
   isOpen.value = !isOpen.value
 }
@@ -97,17 +124,22 @@ const toggleEditMode = () => {
   // Optional: handle edit mode
 }
 
-const removeItem = (id) => {
-  cart.removeItem(id)
+const removeItem = async (id) => {
+  await cart.removeItem(id)
 }
 
-const updateQty = (id, qty) => {
+const updateQty = async (id, qty) => {
   if (qty < 1) return
-  cart.updateQuantity(id, qty)
+  await cart.updateQuantity(id, qty)
 }
 
 const goToCheckout = () => {
   toggleCart()
   router.push('/checkout')
 }
+
+// Expose toggleCart so it can be called from parent
+defineExpose({
+  toggleCart
+})
 </script>
