@@ -89,6 +89,12 @@ class ProductController extends Controller
             'is_available' => filter_var($request->is_available, FILTER_VALIDATE_BOOLEAN),
         ]);
 
+        // Increment the category's product count
+        $category = \App\Models\Category::where('category_id', $request->category_id)->first();
+        if ($category) {
+            $category->increment('quantity');
+        }
+
         $product->load('category');
 
         return response()->json(['message' => 'Product created', 'product' => $product], 201);
@@ -127,15 +133,31 @@ class ProductController extends Controller
         }
 
         if ($request->has('name')) $product->name = $request->name;
+        
+        // Handle category change with count updates
+        if ($request->has('category_id') && $request->category_id !== $product->category_id) {
+            $oldCategoryId = $product->category_id;
+            $newCategoryId = $request->category_id;
+            
+            // Decrement old category count
+            $oldCategory = \App\Models\Category::where('category_id', $oldCategoryId)->first();
+            if ($oldCategory && $oldCategory->quantity > 0) {
+                $oldCategory->decrement('quantity');
+            }
+            
+            // Increment new category count
+            $newCategory = \App\Models\Category::where('category_id', $newCategoryId)->first();
+            if ($newCategory) {
+                $newCategory->increment('quantity');
+            }
+            
+            $product->category_id = $newCategoryId;
+        }
+        
         if ($request->has('price')) $product->price = $request->price;
         if ($request->has('description')) $product->description = $request->description;
         if ($request->has('is_available')) {
              $product->is_available = filter_var($request->is_available, FILTER_VALIDATE_BOOLEAN);
-        }
-
-        // Handle Category Change (Just update the ID, counts are dynamic now)
-        if ($request->has('category_id')) {
-            $product->category_id = $request->category_id;
         }
 
         $product->save();
@@ -151,11 +173,20 @@ class ProductController extends Controller
     {
         $product = Product::where('product_id', $id)->firstOrFail();
 
+        // Store the category_id before deleting
+        $categoryId = $product->category_id;
+
         if ($product->photo && file_exists(public_path($product->photo))) {
             unlink(public_path($product->photo));
         }
 
         $product->delete();
+
+        // Decrement the category's product count
+        $category = \App\Models\Category::where('category_id', $categoryId)->first();
+        if ($category && $category->quantity > 0) {
+            $category->decrement('quantity');
+        }
 
         return response()->json(['message' => 'Product deleted']);
     }

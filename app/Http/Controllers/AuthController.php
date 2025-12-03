@@ -19,19 +19,19 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'username' => 'required|string|max:30',
+            'username' => 'required|string|max:100',
             'email' => [
                 'required',
                 'string',
                 'email',
-                'max:30',
+                'max:100',
                 'unique:users',
                 'regex:/@(student|admin)\.tarc\.edu\.my$/i'
             ],
             'password' => 'required|string|min:6|confirmed',
         ], [
             'username.required' => 'Please enter a username.',
-            'username.max' => 'Username cannot exceed 30 characters.',
+            'username.max' => 'Username cannot exceed 100 characters.',
             'email.required' => 'An email address is required.',
             'email.email' => 'Please enter a valid email format.',
             'email.unique' => 'This email is already registered.',
