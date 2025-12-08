@@ -18,14 +18,14 @@ return new class extends Migration
             $table->string('status', 15);
             $table->decimal('total', 6, 2);
             $table->date('date');
-            $table->time('pickup_time');
+            $table->string('pickup_time', 20); // Changed to string to allow '11:00 AM' format
             $table->string('dining_option', 15);
 
             $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
         });
 
-        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_status CHECK (status IN ('Preparing', 'Refunded', 'Ready', 'Completed'));");
-        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_dining_option CHECK (dining_option IN ('Dine-in', 'Takeaway'));");
+        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_status CHECK (status IN ('Preparing', 'Ready', 'Completed', 'Cancelled', 'Refunded'));");
+        DB::statement("ALTER TABLE orders ADD CONSTRAINT chk_dining_option CHECK (dining_option IN ('dine-in', 'takeaway'));");;
     }
 
     /**

@@ -7,12 +7,19 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
     // 1. Create Order (Student)
     public function store(Request $request)
     {
+        // Log incoming request for debugging
+        Log::info('Order request received', [
+            'user_id' => Auth::id(),
+            'data' => $request->all()
+        ]);
+
         $request->validate([
             'pickup_time' => 'required|string',
             'dining_option' => 'required|in:dine-in,takeaway',
@@ -53,7 +60,7 @@ class OrderController extends Controller
                 'pickup_time' => $request->pickup_time,
                 'dining_option' => $request->dining_option,
                 'total' => $totalAmount,
-                'status' => 'Pending',
+                'status' => 'Preparing',
                 'date' => now()->toDateString(), 
             ]);
 
@@ -61,6 +68,8 @@ class OrderController extends Controller
             $order->products()->attach($syncData);
 
             DB::commit();
+
+            Log::info('Order created successfully', ['order_id' => $order->order_id]);
 
             return response()->json([
                 'message' => 'Order created', 
@@ -70,6 +79,10 @@ class OrderController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Order creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['error' => 'Order failed', 'details' => $e->getMessage()], 500);
         }
     }
@@ -77,12 +90,17 @@ class OrderController extends Controller
     // 2. Get Order History (Student)
     public function index()
     {
-        $orders = Order::where('user_id', Auth::id())
+        $userId = Auth::id();
+        Log::info('Fetching order history', ['user_id' => $userId]);
+        
+        $orders = Order::where('user_id', $userId)
             ->with(['products', 'payment']) // Load products and payment status
             ->orderBy('date', 'desc')
             ->orderBy('pickup_time', 'desc')
             ->get();
-            
+        
+        Log::info('Orders retrieved', ['count' => $orders->count(), 'orders' => $orders]);
+        
         return response()->json($orders);
     }
 
@@ -94,9 +112,9 @@ class OrderController extends Controller
                       ->where('user_id', Auth::id())
                       ->firstOrFail();
 
-        // Only allow cancellation if status is Pending
-        if ($order->status !== 'Pending') {
-            return response()->json(['message' => 'Cannot cancel order that is already preparing or completed.'], 400);
+        // Only allow cancellation if status is Preparing
+        if ($order->status !== 'Preparing') {
+            return response()->json(['message' => 'Cannot cancel order that is already ready or completed.'], 400);
         }
 
         $order->update(['status' => 'Cancelled']);

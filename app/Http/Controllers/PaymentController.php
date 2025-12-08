@@ -43,8 +43,7 @@ class PaymentController extends Controller
                 'refund_date' => null // Default value
             ]);
 
-            // 3. Update Order Status
-            $order->update(['status' => 'Paid']); // Or 'Preparing'
+            // Status remains 'Preparing' - no need to update
 
             DB::commit();
 

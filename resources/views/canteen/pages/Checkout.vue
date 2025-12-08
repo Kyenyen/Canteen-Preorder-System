@@ -125,6 +125,15 @@
         </button>
       </div>
     </div>
+
+    <!-- Payment Modal -->
+    <PaymentModal 
+      :isOpen="showPaymentModal"
+      :paymentMethod="paymentMethod"
+      :amount="total"
+      @close="closePaymentModal"
+      @confirm-payment="handlePaymentConfirm"
+    />
   </div>
 </template>
 
@@ -133,6 +142,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useCartStore } from '../../../js/stores/cart'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import PaymentModal from '../components/Payment-modal.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -141,6 +151,8 @@ const note = ref('')
 const pickupTime = ref('11:00 AM') // Set default pickup time
 const paymentMethod = ref('ewallet')
 const diningOption = ref('takeaway') // Set default dining option
+const showPaymentModal = ref(false)
+const currentOrderId = ref(null)
 
 const pickupTimes = ['11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM'] // example
 
@@ -184,9 +196,8 @@ const placeOrder = async () => {
   try {
     const payload = {
       items: cartItems.value.map(item => ({
-        product_id: item.id,
+        product_id: item.id, // cart returns 'id' which is the product_id
         quantity: item.qty,
-        price: item.price
       })),
       note: note.value,
       pickup_time: pickupTime.value,
@@ -195,17 +206,56 @@ const placeOrder = async () => {
       total: total.value
     }
     
+    console.log('Placing order with payload:', payload)
     const response = await axios.post('/api/orders', payload)
+    console.log('Order response:', response.data)
+    
+    // Store order ID for payment
+    currentOrderId.value = response.data.order_id
     
     // Clear cart after successful order
     await cartStore.clearCart()
     
-    // Navigate to order confirmation or home
-    router.push('/home')
+    // Show payment modal
+    showPaymentModal.value = true
+    
   } catch (err) {
     console.error('Failed to place order', err)
-    alert(err.response?.data?.message || 'Failed to place order. Please try again.')
+    console.error('Error response:', err.response?.data)
+    console.error('Error status:', err.response?.status)
+    alert(err.response?.data?.message || err.response?.data?.error || 'Failed to place order. Please try again.')
   }
+}
+
+const handlePaymentConfirm = async (paymentDetails) => {
+  try {
+    const paymentPayload = {
+      order_id: currentOrderId.value,
+      method: paymentMethod.value
+    }
+    
+    console.log('Processing payment:', paymentPayload)
+    const response = await axios.post('/api/payments', paymentPayload)
+    console.log('Payment response:', response.data)
+    
+    showPaymentModal.value = false
+    
+    // Show success message
+    alert('Order placed and paid successfully!')
+    
+    // Navigate to home or order history
+    router.push('/home')
+    
+  } catch (err) {
+    console.error('Payment failed:', err)
+    alert(err.response?.data?.message || 'Payment failed. Please try again.')
+  }
+}
+
+const closePaymentModal = () => {
+  showPaymentModal.value = false
+  // Still navigate to home even if payment modal is closed
+  router.push('/home')
 }
 </script>
 
