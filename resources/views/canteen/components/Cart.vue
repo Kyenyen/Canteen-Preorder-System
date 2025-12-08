@@ -99,6 +99,7 @@ const cartButtonBottom = ref('1.5rem') // Default bottom position (6 = 1.5rem)
 const notificationState = inject('notificationState', null)
 
 // Watch for notification visibility and adjust cart button position
+// Position is controlled ONLY by notification state, not by route changes
 if (notificationState) {
   watch(() => notificationState.value.show, (isNotificationVisible) => {
     if (isNotificationVisible) {
@@ -108,7 +109,7 @@ if (notificationState) {
       // Return to original position when notification disappears
       cartButtonBottom.value = '1.5rem'
     }
-  })
+  }, { immediate: true })
 }
 
 onMounted(() => {

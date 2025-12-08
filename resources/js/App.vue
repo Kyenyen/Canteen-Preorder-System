@@ -15,6 +15,15 @@
 
     <!-- Cart Component (Global) - Hidden on checkout page -->
     <CartComponent v-if="showCart" ref="cartRef" />
+
+    <!-- Global Notification Component -->
+    <Notification
+      :show="notificationState.show"
+      :type="notificationState.type"
+      :title="notificationState.title"
+      :message="notificationState.message"
+      @close="notificationState.show = false"
+    />
   </div>
 </template>
 
@@ -27,6 +36,7 @@ import { useRoute } from 'vue-router'
 import HeaderComponent from '../views/canteen/components/Navigation.vue'
 import FooterComponent from '../views/canteen/components/Footer.vue'
 import CartComponent from '../views/canteen/components/Cart.vue'
+import Notification from '../views/canteen/components/Notification.vue'
 
 const authStore = useAuthStore()
 const cartRef = ref(null)

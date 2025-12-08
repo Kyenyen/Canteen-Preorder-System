@@ -36,53 +36,20 @@
                 </button>
             </div>
 
-            <!-- 2. Card Form View -->
+            <!-- 2. Card Form View - Stripe Integration -->
             <div v-if="paymentMethod === 'card'" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Card Number (16 Digits)</label>
-                    <input type="text" 
-                        v-model="cardForm.number"
-                        @input="formatCardNumber"
-                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none dark:bg-gray-700 dark:text-white tracking-widest font-mono" 
-                        placeholder="0000 0000 0000 0000" 
-                        maxlength="19" 
-                        inputmode="numeric">
-                </div>
+                <StripeCardElement 
+                    ref="stripeCardRef"
+                    :publishableKey="stripePublishableKey"
+                    @card-ready="onStripeCardReady"
+                    @error="onStripeError"
+                />
 
-                <div class="flex gap-3">
-                    <div class="w-1/2">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Expiry Date</label>
-                        <input type="text" 
-                            v-model="cardForm.expiry"
-                            @input="formatExpiry"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none dark:bg-gray-700 dark:text-white tracking-widest text-center" 
-                            placeholder="MM/YY" 
-                            maxlength="5">
-                    </div>
-                    <div class="w-1/2">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">CVV</label>
-                        <input type="password" 
-                            v-model="cardForm.cvv"
-                            @input="onlyNumbers('cvv', 3)"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none dark:bg-gray-700 dark:text-white tracking-widest text-center" 
-                            placeholder="123" 
-                            maxlength="3" 
-                            inputmode="numeric">
-                    </div>
-                </div>
-                    
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Card PIN (6 Digits)</label>
-                    <input type="password" 
-                        v-model="cardForm.pin"
-                        @input="onlyNumbers('pin', 6)"
-                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none dark:bg-gray-700 dark:text-white tracking-widest" 
-                        placeholder="******" 
-                        maxlength="6" 
-                        inputmode="numeric">
-                </div>
-
-                <button @click="processPayment" :disabled="isLoading" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                <button 
+                    @click="processStripePayment" 
+                    :disabled="isLoading || !stripeReady" 
+                    class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
                     <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
                     <i v-else class="fas fa-credit-card"></i>
                     <span>{{ isLoading ? 'Processing...' : 'Pay with Card' }}</span>
@@ -129,15 +96,26 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import StripeCardElement from './StripeCardElement.vue'
+import axios from 'axios'
 
 const props = defineProps({
     isOpen: Boolean,
-    paymentMethod: String // 'card', 'ewallet', 'duitnow'
+    paymentMethod: String, // 'card', 'ewallet', 'duitnow'
+    amount: Number,
+    orderId: Number
 })
 
 const emit = defineEmits(['close', 'confirm-payment'])
 
 const isLoading = ref(false)
+const stripeReady = ref(false)
+const stripeCardRef = ref(null)
+let stripeInstance = null
+let cardElement = null
+
+// Stripe publishable key - Replace with your actual key or load from env
+const stripePublishableKey = ref(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_YOUR_PUBLISHABLE_KEY')
 
 // Form States
 const cardForm = reactive({
@@ -203,6 +181,72 @@ const onlyNumbersWallet = (field, max) => {
 const formatPhone = (e) => {
     // Just simple number filtering for phone
     walletForm.phone = e.target.value.replace(/\D/g, '')
+}
+
+// --- Stripe Handlers ---
+
+const onStripeCardReady = ({ stripe, card }) => {
+    stripeInstance = stripe
+    cardElement = card
+    stripeReady.value = true
+}
+
+const onStripeError = (error) => {
+    alert('Stripe initialization error: ' + error)
+}
+
+const processStripePayment = async () => {
+    if (!stripeInstance || !cardElement) {
+        alert('Stripe is not ready. Please refresh and try again.')
+        return
+    }
+
+    isLoading.value = true
+    stripeCardRef.value?.setProcessing(true)
+
+    try {
+        // Step 1: Create payment intent on backend
+        const { data } = await axios.post('/api/payments/stripe/create-intent', {
+            amount: Math.round(props.amount * 100), // Convert to cents
+            order_id: props.orderId
+        })
+
+        const { client_secret } = data
+
+        // Step 2: Confirm card payment with Stripe
+        const { error, paymentIntent } = await stripeInstance.confirmCardPayment(client_secret, {
+            payment_method: {
+                card: cardElement,
+                billing_details: {
+                    name: stripeCardRef.value?.getCardholderName() || 'Customer'
+                }
+            }
+        })
+
+        if (error) {
+            throw new Error(error.message)
+        }
+
+        // Step 3: Confirm payment on backend
+        await axios.post('/api/payments/stripe/confirm', {
+            payment_intent_id: paymentIntent.id,
+            order_id: props.orderId
+        })
+
+        // Success
+        emit('confirm-payment', {
+            method: 'card',
+            paymentIntentId: paymentIntent.id,
+            status: paymentIntent.status
+        })
+
+    } catch (error) {
+        console.error('Stripe payment error:', error)
+        alert(error.message || 'Payment failed. Please try again.')
+    } finally {
+        isLoading.value = false
+        stripeCardRef.value?.setProcessing(false)
+    }
 }
 
 // --- Actions ---
