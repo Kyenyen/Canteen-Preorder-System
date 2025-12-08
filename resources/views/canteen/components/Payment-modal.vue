@@ -36,20 +36,41 @@
                 </button>
             </div>
 
-            <!-- 2. Card Form View - Stripe Integration -->
+            <!-- 2. Card Form View -->
             <div v-if="paymentMethod === 'card'" class="space-y-4">
-                <StripeCardElement 
-                    ref="stripeCardRef"
-                    :publishableKey="stripePublishableKey"
-                    @card-ready="onStripeCardReady"
-                    @error="onStripeError"
-                />
-
-                <button 
-                    @click="processStripePayment" 
-                    :disabled="isLoading || !stripeReady" 
-                    class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Card Number</label>
+                    <input type="text" 
+                        v-model="cardForm.number"
+                        @input="formatCardNumber"
+                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white" 
+                        placeholder="0000 0000 0000 0000" 
+                        maxlength="19"
+                        inputmode="numeric">
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Expiry</label>
+                        <input type="text" 
+                            v-model="cardForm.expiry"
+                            @input="formatExpiry"
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white" 
+                            placeholder="MM/YY" 
+                            maxlength="5"
+                            inputmode="numeric">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">CVV</label>
+                        <input type="password" 
+                            v-model="cardForm.cvv"
+                            @input="onlyNumbers('cvv', 3)"
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white" 
+                            placeholder="***" 
+                            maxlength="3"
+                            inputmode="numeric">
+                    </div>
+                </div>
+                <button @click="processPayment" :disabled="isLoading" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
                     <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
                     <i v-else class="fas fa-credit-card"></i>
                     <span>{{ isLoading ? 'Processing...' : 'Pay with Card' }}</span>
@@ -96,7 +117,6 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import StripeCardElement from './StripeCardElement.vue'
 import axios from 'axios'
 
 const props = defineProps({
@@ -109,13 +129,6 @@ const props = defineProps({
 const emit = defineEmits(['close', 'confirm-payment'])
 
 const isLoading = ref(false)
-const stripeReady = ref(false)
-const stripeCardRef = ref(null)
-let stripeInstance = null
-let cardElement = null
-
-// Stripe publishable key - Replace with your actual key or load from env
-const stripePublishableKey = ref(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_YOUR_PUBLISHABLE_KEY')
 
 // Form States
 const cardForm = reactive({
@@ -181,72 +194,6 @@ const onlyNumbersWallet = (field, max) => {
 const formatPhone = (e) => {
     // Just simple number filtering for phone
     walletForm.phone = e.target.value.replace(/\D/g, '')
-}
-
-// --- Stripe Handlers ---
-
-const onStripeCardReady = ({ stripe, card }) => {
-    stripeInstance = stripe
-    cardElement = card
-    stripeReady.value = true
-}
-
-const onStripeError = (error) => {
-    alert('Stripe initialization error: ' + error)
-}
-
-const processStripePayment = async () => {
-    if (!stripeInstance || !cardElement) {
-        alert('Stripe is not ready. Please refresh and try again.')
-        return
-    }
-
-    isLoading.value = true
-    stripeCardRef.value?.setProcessing(true)
-
-    try {
-        // Step 1: Create payment intent on backend
-        const { data } = await axios.post('/api/payments/stripe/create-intent', {
-            amount: Math.round(props.amount * 100), // Convert to cents
-            order_id: props.orderId
-        })
-
-        const { client_secret } = data
-
-        // Step 2: Confirm card payment with Stripe
-        const { error, paymentIntent } = await stripeInstance.confirmCardPayment(client_secret, {
-            payment_method: {
-                card: cardElement,
-                billing_details: {
-                    name: stripeCardRef.value?.getCardholderName() || 'Customer'
-                }
-            }
-        })
-
-        if (error) {
-            throw new Error(error.message)
-        }
-
-        // Step 3: Confirm payment on backend
-        await axios.post('/api/payments/stripe/confirm', {
-            payment_intent_id: paymentIntent.id,
-            order_id: props.orderId
-        })
-
-        // Success
-        emit('confirm-payment', {
-            method: 'card',
-            paymentIntentId: paymentIntent.id,
-            status: paymentIntent.status
-        })
-
-    } catch (error) {
-        console.error('Stripe payment error:', error)
-        alert(error.message || 'Payment failed. Please try again.')
-    } finally {
-        isLoading.value = false
-        stripeCardRef.value?.setProcessing(false)
-    }
 }
 
 // --- Actions ---
