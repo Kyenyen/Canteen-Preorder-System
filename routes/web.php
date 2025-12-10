@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Catch all for Vue SPA
+// Catch all for Vue SPA (exclude HTML files in public folder)
 Route::get('/{any}', function () {
     return view('canteen.index');
-})->where('any', '.*');
+})->where('any', '^(?!.*\.html$).*$');

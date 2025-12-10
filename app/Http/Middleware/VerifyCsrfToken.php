@@ -12,6 +12,7 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        'api/*', // All API routes (since you're using Sanctum for auth)
+        'webhooks/*', // Webhook endpoints
     ];
 }

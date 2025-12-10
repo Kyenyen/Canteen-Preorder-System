@@ -29,6 +29,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/reset-password', [AuthController::class, 'reset']);
 
+// Stripe Webhook (must be outside auth middleware)
+Route::post('/webhooks/stripe', [PaymentController::class, 'handleWebhook']);
+
 // Public Menu Routes (no auth required)
 Route::get('/menu', [ProductController::class, 'index']);
 Route::get('/menu/{id}', [ProductController::class, 'show']);
@@ -40,10 +43,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user/password', [AuthController::class, 'changePassword']);
 
     Route::get('/home-data', [HomeController::class, 'index']);
-    Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/history', [OrderController::class, 'index']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+    
+    // Payment Routes
     Route::post('/payments', [PaymentController::class, 'store']);
+    Route::post('/payments/stripe/intent', [PaymentController::class, 'createPaymentIntent']);
+    Route::post('/payments/stripe/confirm', [PaymentController::class, 'confirmStripePayment']);
+    
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Cart Routes
@@ -63,6 +70,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/products', [ProductController::class, 'store']);
             Route::post('/products/{id}', [ProductController::class, 'updateProduct']);
             Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+            
+            // Admin Payment Management
+            Route::post('/payments/{paymentId}/refund', [PaymentController::class, 'refundPayment']);
         });
 
         Route::get('categories', [CategoryController::class, 'index']);

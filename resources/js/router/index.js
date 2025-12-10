@@ -14,6 +14,7 @@ import CategoryAdmin from '../../views/canteen/pages/CategoryManager.vue'
 import ForgotPassword from '../../views/canteen/pages/ForgotPassword.vue'
 import ResetPassword from '../../views/canteen/pages/ResetPassword.vue'
 import Profile from '../../views/canteen/pages/Profile.vue'
+import PaymentSuccess from '../../views/canteen/pages/PaymentSuccess.vue'
 
 const routes = [
     { 
@@ -61,6 +62,11 @@ const routes = [
         path: '/profile', 
         component: Profile, 
         meta: { requiresAuth: true, title: 'Profile' } 
+    },
+    { 
+        path: '/payment-success', 
+        component: PaymentSuccess, 
+        meta: { requiresAuth: true, title: 'Payment Processing' } 
     },
     { 
         path: '/admin', 

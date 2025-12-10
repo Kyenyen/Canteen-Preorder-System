@@ -19,6 +19,16 @@ class Payment extends Model
         'method',
         'refunded',
         'refund_date',
+        'stripe_payment_intent_id',
+        'stripe_charge_id',
+        'stripe_payment_status',
+        'paid_at',
+    ];
+
+    protected $casts = [
+        'paid_at' => 'datetime',
+        'refund_date' => 'date',
+        'refunded' => 'boolean',
     ];
 
     public function order()

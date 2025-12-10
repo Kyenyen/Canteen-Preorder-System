@@ -8,7 +8,7 @@
         <!-- Header -->
         <div class="bg-gray-50 dark:bg-gray-750 px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
             <h3 class="text-lg font-bold text-gray-800 dark:text-white">
-                <i :class="methodIcon" class="mr-2 text-orange-500"></i>
+                <i :class="[methodIcon, 'mr-2', paymentMethod === 'fpx' ? 'text-blue-600' : paymentMethod === 'grabpay' ? 'text-green-600' : 'text-orange-500']"></i>
                 {{ methodTitle }} Payment
             </h3>
             <button @click="closeModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none">
@@ -36,78 +36,112 @@
                 </button>
             </div>
 
-            <!-- 2. Card Form View -->
+            <!-- 2. Card Form View (Stripe) -->
             <div v-if="paymentMethod === 'card'" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Card Number</label>
-                    <input type="text" 
-                        v-model="cardForm.number"
-                        @input="formatCardNumber"
-                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white" 
-                        placeholder="0000 0000 0000 0000" 
-                        maxlength="19"
-                        inputmode="numeric">
+                <div v-if="errorMessage" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
+                    <p class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</p>
                 </div>
-                <div class="flex gap-3">
-                    <div class="flex-1">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Expiry</label>
-                        <input type="text" 
-                            v-model="cardForm.expiry"
-                            @input="formatExpiry"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white" 
-                            placeholder="MM/YY" 
-                            maxlength="5"
-                            inputmode="numeric">
-                    </div>
-                    <div class="flex-1">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">CVV</label>
-                        <input type="password" 
-                            v-model="cardForm.cvv"
-                            @input="onlyNumbers('cvv', 3)"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none dark:bg-gray-700 dark:text-white" 
-                            placeholder="***" 
-                            maxlength="3"
-                            inputmode="numeric">
-                    </div>
+                
+                <div v-if="!stripeInitialized" class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Initializing secure payment...</p>
                 </div>
-                <button @click="processPayment" :disabled="isLoading" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+
+                <!-- Stripe Payment Element will be mounted here -->
+                <div ref="paymentElementContainer" class="mb-4" :class="{ 'hidden': !stripeInitialized }"></div>
+
+                <button v-if="stripeInitialized" @click="processStripePayment" :disabled="isLoading" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
                     <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
-                    <i v-else class="fas fa-credit-card"></i>
-                    <span>{{ isLoading ? 'Processing...' : 'Pay with Card' }}</span>
+                    <i v-else class="fas fa-lock"></i>
+                    <span>{{ isLoading ? 'Processing...' : `Pay RM ${stripeAmount.toFixed(2)}` }}</span>
                 </button>
+
+                <div v-if="stripeInitialized" class="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Secured by Stripe</span>
+                </div>
             </div>
 
-            <!-- 3. eWallet Form View -->
-            <div v-if="paymentMethod === 'ewallet'" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Phone Number</label>
-                    <div class="flex">
-                        <span class="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-r-0 border-gray-300 rounded-l-xl dark:bg-gray-600 dark:text-gray-400 dark:border-gray-600">
-                            +60
-                        </span>
-                        <input type="text" 
-                            v-model="walletForm.phone"
-                            @input="formatPhone"
-                            class="rounded-none rounded-r-xl bg-gray-50 border border-gray-300 text-gray-900 focus:ring-orange-500 focus:border-orange-500 block flex-1 min-w-0 w-full p-3 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" 
-                            placeholder="12 345 6789"
-                            inputmode="numeric">
+            <!-- 3. FPX Form View (Stripe) -->
+            <div v-if="paymentMethod === 'fpx'" class="space-y-4">
+                <!-- FPX Info Banner -->
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-1">Pay with Malaysia FPX</p>
+                            <p class="text-xs text-blue-700 dark:text-blue-400">You will be redirected to your bank's login page to authorize the payment securely.</p>
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">6-Digit PIN</label>
-                    <input type="password" 
-                        v-model="walletForm.pin"
-                        @input="onlyNumbersWallet('pin', 6)"
-                        class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none dark:bg-gray-700 dark:text-white tracking-widest" 
-                        placeholder="******" 
-                        maxlength="6" 
-                        inputmode="numeric">
+
+                <div v-if="errorMessage" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
+                    <p class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</p>
                 </div>
-                <button @click="processPayment" :disabled="isLoading" class="w-full mt-4 bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                
+                <div v-if="!stripeInitialized" class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-3xl text-blue-400 mb-3"></i>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Connecting to FPX...</p>
+                </div>
+
+                <!-- Stripe Payment Element will be mounted here -->
+                <div ref="paymentElementContainer" class="mb-4" :class="{ 'hidden': !stripeInitialized }"></div>
+
+                <button v-if="stripeInitialized" @click="processStripePayment" :disabled="isLoading" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                    <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
+                    <i v-else class="fas fa-university"></i>
+                    <span>{{ isLoading ? 'Redirecting to bank...' : `Pay RM ${stripeAmount.toFixed(2)} with FPX` }}</span>
+                </button>
+
+                <div v-if="stripeInitialized" class="mt-4 space-y-2">
+                    <div class="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secured by Stripe & Malaysia FPX</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+                        <i class="fas fa-lock"></i>
+                        <span>Bank-level security encryption</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. GrabPay Form View (Stripe) -->
+            <div v-if="paymentMethod === 'grabpay'" class="space-y-4">
+                <!-- GrabPay Info Banner -->
+                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-4">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-wallet text-green-600 dark:text-green-400 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-green-900 dark:text-green-300 mb-1">Pay with GrabPay</p>
+                            <p class="text-xs text-green-700 dark:text-green-400">You will be redirected to the Grab app to complete your payment.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="errorMessage" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
+                    <p class="text-sm text-red-600 dark:text-red-400">{{ errorMessage }}</p>
+                </div>
+                
+                <div v-if="!stripeInitialized" class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-3xl text-green-400 mb-3"></i>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Connecting to GrabPay...</p>
+                </div>
+
+                <!-- Stripe Payment Element will be mounted here -->
+                <div ref="paymentElementContainer" class="mb-4" :class="{ 'hidden': !stripeInitialized }"></div>
+
+                <button v-if="stripeInitialized" @click="processStripePayment" :disabled="isLoading" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
                     <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
                     <i v-else class="fas fa-wallet"></i>
-                    <span>{{ isLoading ? 'Processing...' : 'Pay with eWallet' }}</span>
+                    <span>{{ isLoading ? 'Redirecting to Grab...' : `Pay RM ${stripeAmount.toFixed(2)} with GrabPay` }}</span>
                 </button>
+
+                <div v-if="stripeInitialized" class="mt-4 space-y-2">
+                    <div class="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secured by Stripe & GrabPay</span>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -116,19 +150,28 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import axios from 'axios'
+import { loadStripe } from '@stripe/stripe-js'
 
 const props = defineProps({
     isOpen: Boolean,
-    paymentMethod: String, // 'card', 'ewallet', 'duitnow'
+    paymentMethod: String, // 'card', 'fpx', 'duitnow'
     amount: Number,
-    orderId: Number
+    orderData: Object // Order data to be created after payment
 })
 
 const emit = defineEmits(['close', 'confirm-payment'])
 
 const isLoading = ref(false)
+const errorMessage = ref('')
+
+const stripe = ref(null)
+const elements = ref(null)
+const stripeInitialized = ref(false)
+const paymentIntentId = ref(null)
+const paymentElementContainer = ref(null)
+const stripeAmount = ref(0) // Store the actual amount from PaymentIntent
 
 // Form States
 const cardForm = reactive({
@@ -146,8 +189,9 @@ const walletForm = reactive({
 // Computed UI Helpers
 const methodTitle = computed(() => {
     switch(props.paymentMethod) {
-        case 'card': return 'Credit/Debit Card';
-        case 'ewallet': return 'eWallet';
+        case 'card': return 'Card';
+        case 'fpx': return 'FPX Online Banking';
+        case 'grabpay': return 'GrabPay';
         case 'duitnow': return 'DuitNow QR';
         default: return 'Payment';
     }
@@ -156,11 +200,176 @@ const methodTitle = computed(() => {
 const methodIcon = computed(() => {
     switch(props.paymentMethod) {
         case 'card': return 'fa-credit-card';
-        case 'ewallet': return 'fa-wallet';
+        case 'fpx': return 'fa-university';
+        case 'grabpay': return 'fa-wallet';
         case 'duitnow': return 'fa-qrcode';
         default: return 'fa-money-bill';
     }
 })
+
+// Watch for modal open and payment method change to initialize Stripe
+watch(() => [props.isOpen, props.paymentMethod], async ([isOpen, method]) => {
+    if (isOpen && (method === 'card' || method === 'fpx' || method === 'grabpay') && !stripeInitialized.value) {
+        // Wait for DOM to be updated
+        await nextTick()
+        // Delay to ensure the modal and stripe container are fully rendered
+        setTimeout(() => {
+            initializeStripe()
+        }, 300)
+    }
+})
+
+// Initialize Stripe
+const initializeStripe = async () => {
+    try {
+        errorMessage.value = ''
+        stripeInitialized.value = false
+
+        // Get Stripe publishable key from env
+        const stripeKey = import.meta.env.VITE_STRIPE_KEY
+        
+        if (!stripeKey) {
+            throw new Error('Stripe key not configured')
+        }
+
+        // Create Payment Intent
+        const response = await axios.post('/api/payments/stripe/intent', {
+            amount: props.amount,
+            payment_method_type: props.paymentMethod, // Send the actual payment method (card, fpx, grabpay)
+            order_data: props.orderData // Send order data for metadata
+        })
+
+        const { clientSecret, paymentIntentId: intentId, amount } = response.data
+        paymentIntentId.value = intentId
+        
+        // Store the amount from PaymentIntent (convert from cents to dollars)
+        if (amount) {
+            stripeAmount.value = amount / 100
+        }
+
+        // Initialize Stripe.js
+        stripe.value = await loadStripe(stripeKey)
+        
+        // Create Elements instance
+        const appearance = {
+            theme: 'stripe',
+            variables: {
+                colorPrimary: props.paymentMethod === 'fpx' ? '#0066cc' : '#2563eb',
+                colorBackground: '#ffffff',
+                colorText: '#1f2937',
+                colorDanger: '#ef4444',
+                fontFamily: 'system-ui, sans-serif',
+                borderRadius: '8px',
+            }
+        }
+
+        elements.value = stripe.value.elements({
+            clientSecret,
+            appearance
+        })
+
+        // Create and mount the Payment Element
+        const paymentElement = elements.value.create('payment', {
+            layout: props.paymentMethod === 'fpx' ? {
+                type: 'accordion',
+                defaultCollapsed: false,
+                radios: true,
+                spacedAccordionItems: false
+            } : 'tabs'
+        })
+        
+        // Verify the element exists before mounting
+        if (!paymentElementContainer.value) {
+            throw new Error('Payment element container not found in DOM')
+        }
+        
+        paymentElement.mount(paymentElementContainer.value)
+
+        stripeInitialized.value = true
+        stripeInitialized.value = true
+
+    } catch (error) {
+        console.error('Stripe initialization error:', error)
+        errorMessage.value = error.response?.data?.message || error.message || 'Failed to initialize payment'
+    }
+}
+
+// Process Stripe Payment
+const processStripePayment = async () => {
+    if (!stripe.value || !elements.value) {
+        errorMessage.value = 'Payment system not initialized'
+        return
+    }
+
+    isLoading.value = true
+    errorMessage.value = ''
+
+    try {
+        console.log('Starting Stripe payment confirmation for:', props.paymentMethod)
+        
+        // Both card and FPX use 'always' redirect to payment success page
+        const redirectBehavior = 'always'
+        
+        // Encode order data to pass in URL
+        const orderDataEncoded = encodeURIComponent(JSON.stringify(props.orderData))
+        
+        // Confirm the payment with Stripe
+        const { error, paymentIntent } = await stripe.value.confirmPayment({
+            elements: elements.value,
+            redirect: redirectBehavior,
+            confirmParams: {
+                return_url: `${window.location.origin}/payment-success?payment_method=${props.paymentMethod}&order_data=${orderDataEncoded}`
+            }
+        })
+
+        if (error) {
+            console.error('Stripe confirmPayment error:', error)
+            throw new Error(error.message)
+        }
+
+        // This code will not be reached due to 'always' redirect
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+            console.log('Payment succeeded:', paymentIntent.id)
+        }
+
+    } catch (error) {
+        console.error('Stripe payment error:', error)
+        errorMessage.value = error.message || 'Payment failed. Please try again.'
+        isLoading.value = false
+    }
+}
+
+// Confirm Stripe payment on backend
+const confirmStripePaymentOnBackend = async () => {
+    try {
+        console.log('Confirming payment on backend:', {
+            order_id: props.orderId,
+            payment_intent_id: paymentIntentId.value,
+            payment_method: props.paymentMethod
+        })
+        
+        const response = await axios.post('/api/payments/stripe/confirm', {
+            order_id: props.orderId,
+            payment_intent_id: paymentIntentId.value,
+            payment_method: props.paymentMethod // Send the payment method (card or fpx)
+        })
+
+        console.log('Backend confirmation response:', response.data)
+        isLoading.value = false
+        
+        // Emit success to parent
+        emit('confirm-payment', {
+            method: props.paymentMethod, // Use actual payment method (card or ewallet)
+            paymentId: response.data.payment_id,
+            success: true
+        })
+
+    } catch (error) {
+        console.error('Payment confirmation error:', error)
+        errorMessage.value = error.response?.data?.message || 'Payment confirmation failed'
+        isLoading.value = false
+    }
+}
 
 // --- Input Formatters ---
 
@@ -196,10 +405,57 @@ const formatPhone = (e) => {
     walletForm.phone = e.target.value.replace(/\D/g, '')
 }
 
+// Check if returning from FPX redirect on component mount
+onMounted(async () => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const paymentIntentClientSecret = urlParams.get('payment_intent_client_secret')
+    const redirectStatus = urlParams.get('redirect_status')
+    
+    if (paymentIntentClientSecret && redirectStatus) {
+        console.log('Returned from payment redirect:', { redirectStatus })
+        
+        if (redirectStatus === 'succeeded') {
+            // Payment succeeded, need to confirm on backend
+            const paymentIntentId = urlParams.get('payment_intent')
+            const orderId = urlParams.get('order_id')
+            const paymentMethod = urlParams.get('payment_method')
+            
+            if (paymentIntentId && orderId) {
+                try {
+                    const response = await axios.post('/api/payments/stripe/confirm', {
+                        order_id: orderId,
+                        payment_intent_id: paymentIntentId,
+                        payment_method: paymentMethod || 'fpx'
+                    })
+                    
+                    console.log('Payment confirmed on backend:', response.data)
+                    // Redirect to home or show success
+                    window.location.href = '/home'
+                } catch (error) {
+                    console.error('Failed to confirm payment on backend:', error)
+                }
+            }
+        } else if (redirectStatus === 'failed') {
+            console.error('Payment failed during redirect')
+        }
+    }
+})
+
 // --- Actions ---
 
 const closeModal = () => {
     if (isLoading.value) return; // Prevent closing while processing
+    
+    // Reset Stripe state
+    if (props.paymentMethod === 'card' || props.paymentMethod === 'fpx') {
+        stripeInitialized.value = false
+        elements.value = null
+        stripe.value = null
+        paymentIntentId.value = null
+        errorMessage.value = ''
+        stripeAmount.value = 0
+    }
+    
     emit('close')
 }
 
@@ -210,9 +466,9 @@ const processPayment = async () => {
             alert('Please fill in complete card details')
             return
         }
-    } else if (props.paymentMethod === 'ewallet') {
+    } else if (props.paymentMethod === 'fpx') {
         if (!walletForm.phone || walletForm.pin.length < 6) {
-            alert('Please fill in complete eWallet details')
+            alert('Please fill in complete FPX details')
             return
         }
     }
@@ -238,5 +494,10 @@ const processPayment = async () => {
 @keyframes fadeIn {
   from { opacity: 0 }
   to { opacity: 1 }
+}
+
+/* Stripe Element Styles */
+#payment-element {
+  min-height: 200px;
 }
 </style>

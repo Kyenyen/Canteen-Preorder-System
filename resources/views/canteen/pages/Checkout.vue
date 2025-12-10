@@ -131,6 +131,7 @@
       :isOpen="showPaymentModal"
       :paymentMethod="paymentMethod"
       :amount="total"
+      :orderData="orderData"
       @close="closePaymentModal"
       @confirm-payment="handlePaymentConfirm"
     />
@@ -149,10 +150,22 @@ const cartStore = useCartStore()
 
 const note = ref('')
 const pickupTime = ref('11:00 AM') // Set default pickup time
-const paymentMethod = ref('ewallet')
+const paymentMethod = ref('fpx')
 const diningOption = ref('takeaway') // Set default dining option
 const showPaymentModal = ref(false)
-const currentOrderId = ref(null)
+
+// Computed property for order data to pass to payment modal
+const orderData = computed(() => ({
+  items: cartItems.value.map(item => ({
+    product_id: item.id,
+    quantity: item.qty,
+  })),
+  note: note.value,
+  pickup_time: pickupTime.value,
+  payment_method: paymentMethod.value,
+  dining_option: diningOption.value,
+  total: total.value
+}))
 
 const pickupTimes = ['11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM'] // example
 
@@ -162,9 +175,9 @@ const diningOptions = [
 ]
 
 const paymentMethods = [
-  { value: 'ewallet', label: 'TARC eWallet', subtitle: 'Balance: RM 50.00', icon: 'fas fa-wallet' },
-  { value: 'duitnow', label: 'DuitNow QR', subtitle: 'Scan to pay', icon: 'fas fa-qrcode' },
-  { value: 'card', label: 'Credit / Debit Card', subtitle: '', icon: 'fas fa-credit-card' }
+  { value: 'fpx', label: 'FPX Online Banking', subtitle: 'Powered by Malaysia FPX', icon: 'fas fa-university' },
+  { value: 'grabpay', label: 'GrabPay', subtitle: 'Pay with Grab Wallet', icon: 'fas fa-wallet' },
+  { value: 'card', label: 'Credit / Debit Card', subtitle: 'Powered by Stripe', icon: 'fas fa-credit-card' }
 ]
 
 // Use computed to get real-time cart items from store
@@ -193,52 +206,36 @@ const placeOrder = async () => {
     return
   }
 
-  try {
-    const payload = {
-      items: cartItems.value.map(item => ({
-        product_id: item.id, // cart returns 'id' which is the product_id
-        quantity: item.qty,
-      })),
-      note: note.value,
-      pickup_time: pickupTime.value,
-      payment_method: paymentMethod.value,
-      dining_option: diningOption.value,
-      total: total.value
-    }
-    
-    console.log('Placing order with payload:', payload)
-    const response = await axios.post('/api/orders', payload)
-    console.log('Order response:', response.data)
-    
-    // Store order ID for payment
-    currentOrderId.value = response.data.order_id
-    
-    // Clear cart after successful order
-    await cartStore.clearCart()
-    
-    // Show payment modal
-    showPaymentModal.value = true
-    
-  } catch (err) {
-    console.error('Failed to place order', err)
-    console.error('Error response:', err.response?.data)
-    console.error('Error status:', err.response?.status)
-    alert(err.response?.data?.message || err.response?.data?.error || 'Failed to place order. Please try again.')
-  }
+  // Just open the payment modal without creating the order yet
+  // Order will be created after payment is successful
+  showPaymentModal.value = true
 }
 
 const handlePaymentConfirm = async (paymentDetails) => {
   try {
+    // If card, fpx, or grabpay payment (Stripe), order will be created in PaymentSuccess page
+    if (paymentMethod.value === 'card' || paymentMethod.value === 'fpx' || paymentMethod.value === 'grabpay') {
+      // Stripe payment - order creation happens after redirect
+      showPaymentModal.value = false
+      return
+    }
+
+    // For other payment methods, create order then payment
+    const response = await axios.post('/api/orders', orderData.value)
+    const orderId = response.data.order_id
+    
     const paymentPayload = {
-      order_id: currentOrderId.value,
+      order_id: orderId,
       method: paymentMethod.value
     }
     
     console.log('Processing payment:', paymentPayload)
-    const response = await axios.post('/api/payments', paymentPayload)
-    console.log('Payment response:', response.data)
+    await axios.post('/api/payments', paymentPayload)
     
     showPaymentModal.value = false
+    
+    // Clear cart only after successful payment
+    await cartStore.clearCart()
     
     // Show success message
     alert('Order placed and paid successfully!')
@@ -253,9 +250,9 @@ const handlePaymentConfirm = async (paymentDetails) => {
 }
 
 const closePaymentModal = () => {
+  // Just close the modal and return to checkout
   showPaymentModal.value = false
-  // Still navigate to home even if payment modal is closed
-  router.push('/home')
+  // Keep the order and cart intact so user can try again or choose different payment method
 }
 </script>
 

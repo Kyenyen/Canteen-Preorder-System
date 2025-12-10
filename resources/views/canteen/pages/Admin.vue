@@ -15,10 +15,6 @@
           <p class="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">Manage incoming orders</p>
         </div>
       </div>
-      <div class="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-        <span class="text-gray-500 dark:text-gray-400 text-xs uppercase font-bold">Pending</span>
-        <p class="text-xl font-bold text-orange-600 dark:text-orange-400">{{ pendingCount }}</p>
-      </div>
     </div>
 
     <!-- Orders Table -->
@@ -50,7 +46,6 @@
             <td class="px-6 py-4">{{ formatCurrency(order.total) }}</td>
             <td class="px-6 py-4">
                 <span :class="{
-                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300': order.status === 'Pending',
                     'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300': order.status === 'Preparing',
                     'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300': order.status === 'Ready' || order.status === 'Completed',
                     'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300': order.status === 'Cancelled'
@@ -60,19 +55,25 @@
             </td>
             <td class="px-6 py-4 text-right">
               <button 
-                v-if="order.status === 'Pending'" 
-                @click="updateStatus(order.order_id, 'Preparing')" 
-                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition shadow-sm"
-              >
-                Start Cooking
-              </button>
-              <button 
                 v-if="order.status === 'Preparing'" 
                 @click="updateStatus(order.order_id, 'Ready')" 
-                class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition shadow-sm ml-2"
+                class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition shadow-sm"
               >
                 Mark Ready
               </button>
+              <button 
+                v-if="order.status === 'Ready'" 
+                @click="updateStatus(order.order_id, 'Completed')" 
+                class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition shadow-sm"
+              >
+                Mark Complete
+              </button>
+              <span 
+                v-if="order.status === 'Completed'" 
+                class="text-xs text-gray-400 dark:text-gray-500 italic"
+              >
+                Order Completed
+              </span>
             </td>
           </tr>
         </tbody>
@@ -117,8 +118,6 @@ const updateStatus = async (orderId, newStatus) => {
     alert('Error updating status')
   }
 }
-
-const pendingCount = computed(() => orders.value.filter(o => o.status === 'Pending').length)
 
 const formatCurrency = (value) => {
     return 'RM ' + Number(value).toFixed(2)
