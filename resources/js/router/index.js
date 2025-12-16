@@ -11,6 +11,7 @@ import History from '../../views/canteen/pages/History.vue'
 import Admin from '../../views/canteen/pages/Admin.vue'
 import ProductManager from '../../views/canteen/pages/ProductManager.vue'
 import CategoryAdmin from '../../views/canteen/pages/CategoryManager.vue'
+import UserManager from '../../views/canteen/pages/UserManager.vue'
 import SalesReport from '../../views/canteen/pages/SalesReport.vue'
 import ForgotPassword from '../../views/canteen/pages/ForgotPassword.vue'
 import ResetPassword from '../../views/canteen/pages/ResetPassword.vue'
@@ -88,6 +89,11 @@ const routes = [
         path: '/admin/report',
         component: SalesReport,
         meta: { requiresAuth: true, title: 'Sales Report', role: 'admin' }
+    },
+    {
+        path: '/admin/users',
+        component: UserManager,
+        meta: { requiresAuth: true, title: 'User Management', role: 'admin' }
     },
     // Catch-all
     { path: '/:pathMatch(.*)*', redirect: '/' }

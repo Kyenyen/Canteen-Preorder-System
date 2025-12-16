@@ -43,6 +43,9 @@
           <router-link to="/admin/report" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <i class="fas fa-chart-line"></i> Sales Report
           </router-link>
+          <router-link to="/admin/users" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <i class="fas fa-users-cog"></i> Manage User
+          </router-link>
           <router-link to="/admin/menu" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <i class="fas fa-edit mr-1"></i> Manage Menu
           </router-link>

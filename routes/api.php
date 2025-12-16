@@ -9,6 +9,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SalesReportController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,6 +80,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Sales Report
             Route::get('/sales-report', [SalesReportController::class, 'getSalesReport']);
+
+            // User Management
+            Route::get('/users', [UserController::class, 'index']);
+            Route::post('/users', [UserController::class, 'store']);
+            Route::put('/users/{id}', [UserController::class, 'updateUser']);
+            Route::delete('/users/{id}', [UserController::class, 'destroy']);
+            Route::get('/users/{userId}/orders', [UserController::class, 'getUserOrders']);
         });
 
         Route::get('categories', [CategoryController::class, 'index']);
