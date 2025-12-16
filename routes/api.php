@@ -8,6 +8,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\SalesReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,19 +39,21 @@ Route::get('/menu/{id}', [ProductController::class, 'show']);
 
 // Order Routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {return $request->user();});
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
     Route::post('/user/profile', [AuthController::class, 'updateProfile']);
     Route::put('/user/password', [AuthController::class, 'changePassword']);
 
     Route::get('/home-data', [HomeController::class, 'index']);
     Route::get('/orders/history', [OrderController::class, 'index']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
-    
+
     // Payment Routes
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::post('/payments/stripe/intent', [PaymentController::class, 'createPaymentIntent']);
     Route::post('/payments/stripe/confirm', [PaymentController::class, 'confirmStripePayment']);
-    
+
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Cart Routes
@@ -62,7 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin Routes
     Route::middleware('role:admin')->group(function () {
-        
+
         // Admin Product and Order Management (with /admin prefix)
         Route::prefix('admin')->group(function () {
             Route::get('/orders', [OrderController::class, 'indexAdmin']);
@@ -70,9 +73,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/products', [ProductController::class, 'store']);
             Route::post('/products/{id}', [ProductController::class, 'updateProduct']);
             Route::delete('/products/{id}', [ProductController::class, 'destroy']);
-            
+
             // Admin Payment Management
             Route::post('/payments/{paymentId}/refund', [PaymentController::class, 'refundPayment']);
+
+            // Sales Report
+            Route::get('/sales-report', [SalesReportController::class, 'getSalesReport']);
         });
 
         Route::get('categories', [CategoryController::class, 'index']);

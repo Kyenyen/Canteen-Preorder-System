@@ -11,77 +11,83 @@ import History from '../../views/canteen/pages/History.vue'
 import Admin from '../../views/canteen/pages/Admin.vue'
 import ProductManager from '../../views/canteen/pages/ProductManager.vue'
 import CategoryAdmin from '../../views/canteen/pages/CategoryManager.vue'
+import SalesReport from '../../views/canteen/pages/SalesReport.vue'
 import ForgotPassword from '../../views/canteen/pages/ForgotPassword.vue'
 import ResetPassword from '../../views/canteen/pages/ResetPassword.vue'
 import Profile from '../../views/canteen/pages/Profile.vue'
 import PaymentSuccess from '../../views/canteen/pages/PaymentSuccess.vue'
 
 const routes = [
-    { 
-        path: '/', 
-        alias: '/login', 
-        component: Login, 
+    {
+        path: '/',
+        alias: '/login',
+        component: Login,
         meta: { guest: true, title: 'Login' }
     },
-    { 
-        path: '/register', 
-        component: Register, 
-        meta: { guest: true, title: 'Register' } 
+    {
+        path: '/register',
+        component: Register,
+        meta: { guest: true, title: 'Register' }
     },
-    { 
-        path: '/home', 
-        component: Home, 
-        meta: { requiresAuth: true, title: 'Home' } 
+    {
+        path: '/home',
+        component: Home,
+        meta: { requiresAuth: true, title: 'Home' }
     },
-    { 
-        path: '/menu', 
-        component: Menu, 
-        meta: { requiresAuth: true, title: 'Menu' } 
+    {
+        path: '/menu',
+        component: Menu,
+        meta: { requiresAuth: true, title: 'Menu' }
     },
-    { 
-        path: '/checkout', 
-        component: Checkout, 
-        meta: { requiresAuth: true, title: 'Checkout' } 
+    {
+        path: '/checkout',
+        component: Checkout,
+        meta: { requiresAuth: true, title: 'Checkout' }
     },
-    { 
-        path: '/history', 
-        component: History, 
-        meta: { requiresAuth: true, title: 'My Orders' } 
+    {
+        path: '/history',
+        component: History,
+        meta: { requiresAuth: true, title: 'My Orders' }
     },
-    { 
-        path: '/forgot-password', 
-        component: ForgotPassword, 
-        meta: { guest: true, title: 'Forgot Password' } 
+    {
+        path: '/forgot-password',
+        component: ForgotPassword,
+        meta: { guest: true, title: 'Forgot Password' }
     },
-    { 
-        path: '/reset-password', 
-        component: ResetPassword, 
-        meta: { guest: true, title: 'Reset Password' } 
+    {
+        path: '/reset-password',
+        component: ResetPassword,
+        meta: { guest: true, title: 'Reset Password' }
     },
-    { 
-        path: '/profile', 
-        component: Profile, 
-        meta: { requiresAuth: true, title: 'Profile' } 
+    {
+        path: '/profile',
+        component: Profile,
+        meta: { requiresAuth: true, title: 'Profile' }
     },
-    { 
-        path: '/payment-success', 
-        component: PaymentSuccess, 
-        meta: { requiresAuth: true, title: 'Payment Processing' } 
+    {
+        path: '/payment-success',
+        component: PaymentSuccess,
+        meta: { requiresAuth: true, title: 'Payment Processing' }
     },
-    { 
-        path: '/admin', 
-        component: Admin, 
+    {
+        path: '/admin',
+        component: Admin,
         meta: { requiresAuth: true, title: 'Kitchen Dashboard', role: 'admin' } // Added role: 'admin' for consistency
     },
-    { 
-        path: '/admin/menu', 
-        component: ProductManager, 
-        meta: { requiresAuth: true, title: 'Menu Manager', role: 'admin' } 
+    {
+        path: '/admin/menu',
+        component: ProductManager,
+        meta: { requiresAuth: true, title: 'Menu Manager', role: 'admin' }
     },
-    { 
+    {
         path: '/admin/categories', // Category Manager <-- NEW ROUTE
-        component: CategoryAdmin, 
-        meta: { requiresAuth: true, title: 'Category Manager', role: 'admin' } 
+        component: CategoryAdmin,
+        meta: { requiresAuth: true, title: 'Category Manager', role: 'admin' }
+    },
+    {
+        path: '/admin/report',
+        component: SalesReport,
+        meta: { requiresAuth: true, title: 'Sales Report', role: 'admin' }
     },
     // Catch-all
     { path: '/:pathMatch(.*)*', redirect: '/' }
