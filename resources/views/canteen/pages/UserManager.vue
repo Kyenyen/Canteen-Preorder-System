@@ -170,11 +170,12 @@
                 <th class="px-4 py-3">Total</th>
                 <th class="px-4 py-3">Status</th>
                 <th class="px-4 py-3">Payment</th>
+                <th class="px-4 py-3 text-right">Receipt Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300">
               <tr v-if="userOrders.length === 0">
-                <td colspan="5" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No orders found for this user</td>
+                <td colspan="6" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No orders found for this user</td>
               </tr>
               <tr v-for="order in userOrders" :key="order.order_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
                 <td class="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400">{{ order.order_id }}</td>
@@ -190,9 +191,48 @@
                     {{ order.payment.refunded ? 'Refunded' : order.payment.method }}
                   </span>
                 </td>
+                <td class="px-4 py-3 text-right flex justify-end gap-2">
+                  <button @click="viewReceiptModal(order.order_id)" class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition" title="View Receipt">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button @click="downloadReceipt(order.order_id)" :disabled="downloadingOrder === order.order_id" class="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition disabled:opacity-50" title="Download PDF">
+                    <i :class="downloadingOrder === order.order_id ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Receipt View Modal -->
+    <div v-if="showReceiptModal" class="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4 fade-in backdrop-blur-sm">
+      <div class="bg-white dark:bg-gray-800 w-full max-w-3xl rounded-2xl shadow-2xl p-6 relative max-h-[90vh] overflow-hidden flex flex-col">
+        
+        <div class="flex items-center justify-between mb-4 flex-shrink-0">
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white">Order Receipt</h3>
+          <button @click="showReceiptModal = false" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+
+        <!-- Receipt Content -->
+        <div class="flex-1 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div v-if="receiptHtml" class="p-6" v-html="receiptHtml"></div>
+          <div v-else class="p-6 text-center text-gray-500 dark:text-gray-400">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Loading receipt...</p>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 mt-4 flex-shrink-0">
+          <button @click="showReceiptModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">Close</button>
+          <button @click="downloadReceiptFromModal()" :disabled="downloadingOrder" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-md transition disabled:opacity-50 flex items-center gap-2">
+            <i :class="downloadingOrder ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+            Download PDF
+          </button>
         </div>
       </div>
     </div>
@@ -219,6 +259,11 @@ const userToDelete = reactive({ id: null, name: '' })
 const showOrdersModal = ref(false)
 const selectedUser = ref(null)
 const userOrders = ref([])
+
+const showReceiptModal = ref(false)
+const receiptHtml = ref('')
+const currentReceiptOrderId = ref(null)
+const downloadingOrder = ref(null)
 
 const form = reactive({
     id: null,
@@ -384,6 +429,52 @@ const getStatusColor = (status) => {
         default:
             return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
     }
+}
+
+const viewReceiptModal = async (orderId) => {
+    currentReceiptOrderId.value = orderId
+    receiptHtml.value = ''
+    showReceiptModal.value = true
+    
+    try {
+        const res = await axios.get(`/api/orders/${orderId}/receipt`)
+        receiptHtml.value = res.data.html
+    } catch (err) {
+        console.error('Error fetching receipt:', err)
+        receiptHtml.value = '<p class="text-red-600">Failed to load receipt</p>'
+        showNotification('Failed to load receipt', 'error')
+    }
+}
+
+const downloadReceipt = async (orderId) => {
+    downloadingOrder.value = orderId
+    try {
+        const res = await axios.get(`/api/admin/orders/${orderId}/receipt/download`, {
+            responseType: 'blob'
+        })
+        
+        // Create blob link to download
+        const url = window.URL.createObjectURL(new Blob([res.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', `Receipt_${orderId}.pdf`)
+        document.body.appendChild(link)
+        link.click()
+        link.parentNode.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        showNotification('Receipt downloaded successfully', 'success')
+    } catch (err) {
+        console.error('Error downloading receipt:', err)
+        showNotification('Failed to download receipt', 'error')
+    } finally {
+        downloadingOrder.value = null
+    }
+}
+
+const downloadReceiptFromModal = async () => {
+    if (!currentReceiptOrderId.value) return
+    await downloadReceipt(currentReceiptOrderId.value)
 }
 
 onMounted(() => {

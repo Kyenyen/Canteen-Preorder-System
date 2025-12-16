@@ -10,6 +10,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReceiptController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/history', [OrderController::class, 'index']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
 
+    // Receipt Routes
+    Route::get('/orders/{orderId}/receipt', [ReceiptController::class, 'viewReceipt']);
+    Route::get('/orders/{orderId}/receipt/download', [ReceiptController::class, 'downloadReceipt']);
+    Route::post('/orders/{orderId}/request-receipt', [ReceiptController::class, 'requestReceipt']);
+
     // Payment Routes
     Route::post('/payments', [PaymentController::class, 'store']);
     Route::post('/payments/stripe/intent', [PaymentController::class, 'createPaymentIntent']);
@@ -77,6 +83,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Admin Payment Management
             Route::post('/payments/{paymentId}/refund', [PaymentController::class, 'refundPayment']);
+
+            // Receipt Management (Admin)
+            Route::get('/orders/{orderId}/receipt/download', [ReceiptController::class, 'downloadReceipt']);
 
             // Sales Report
             Route::get('/sales-report', [SalesReportController::class, 'getSalesReport']);

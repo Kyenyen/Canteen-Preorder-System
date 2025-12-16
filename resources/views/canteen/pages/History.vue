@@ -1,6 +1,25 @@
 <template>
   <!-- VIEW: HISTORY (McDonald's Style) -->
   <div id="view-history" class="h-full flex-col fade-in bg-gray-100 dark:bg-gray-900 overflow-y-auto transition-colors duration-300">
+    <!-- Notification Toast -->
+    <div v-if="notification.message" 
+        class="fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 z-50"
+        :class="notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'">
+      <div class="flex items-center gap-2">
+        <i :class="notification.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+        <p>{{ notification.message }}</p>
+      </div>
+    </div>
+
+    <!-- Reorder Notification Component -->
+    <Notification 
+      :show="showReorderNotification" 
+      type="success" 
+      title="Items Added" 
+      :message="reorderMessage"
+      @close="showReorderNotification = false"
+    />
+
     <div class="max-w-3xl mx-auto w-full p-6 pb-20">
       <h2 class="text-3xl font-extrabold text-gray-800 dark:text-white mb-6">My Orders</h2>
 
@@ -115,11 +134,20 @@
           <!-- Footer -->
           <div class="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
             <span class="text-gray-500 dark:text-gray-400 text-sm">{{ order.pickup_time }}</span>
-            <button 
-              @click="reorder(order.order_id)"
-              class="px-4 py-2 border-2 border-orange-500 text-orange-500 font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
-              <i class="fas fa-redo"></i> Order Again
-            </button>
+            <div class="flex gap-2">
+              <button 
+                @click="downloadReceipt(order.order_id)"
+                :disabled="downloadingOrder === order.order_id"
+                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2">
+                <i :class="downloadingOrder === order.order_id ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+                Receipt
+              </button>
+              <button 
+                @click="reorder(order.order_id)"
+                class="px-4 py-2 border-2 border-orange-500 text-orange-500 font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
+                <i class="fas fa-redo"></i> Order Again
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -128,15 +156,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useCartStore } from '../../../js/stores/cart'
 import { useRouter } from 'vue-router'
+import Notification from '../components/Notification.vue'
 
 const orders = ref([])
 const cancelling = ref(null)
+const downloadingOrder = ref(null)
 const cartStore = useCartStore()
 const router = useRouter()
+const notification = reactive({ message: null, type: 'success' })
+
+// Reorder notification
+const showReorderNotification = ref(false)
+const reorderMessage = ref('')
 
 const activeOrders = computed(() => {
   return orders.value.filter(o => o.status === 'Preparing' || o.status === 'Ready')
@@ -175,6 +210,14 @@ const cancelOrder = async (orderId) => {
   }
 }
 
+const showNotification = (message, type = 'success') => {
+  notification.message = message
+  notification.type = type
+  setTimeout(() => {
+    notification.message = null
+  }, 3000)
+}
+
 const reorder = async (orderId) => {
   try {
     const order = orders.value.find(o => o.order_id === orderId)
@@ -185,12 +228,42 @@ const reorder = async (orderId) => {
       await cartStore.addItem(item, item.pivot.quantity)
     }
     
-    alert(`${order.products.length} item(s) added to cart!`)
-    // Navigate to menu page
-    router.push('/menu')
+    reorderMessage.value = `${order.products.length} item(s) added to cart!`
+    showReorderNotification.value = true
+    
+    // Navigate to menu page after a short delay
+    setTimeout(() => {
+      router.push('/menu')
+    }, 800)
   } catch (err) {
     console.error('Failed to reorder', err)
-    alert('Failed to add items to cart. Please try again.')
+    showNotification('Failed to add items to cart. Please try again.', 'error')
+  }
+}
+
+const downloadReceipt = async (orderId) => {
+  downloadingOrder.value = orderId
+  try {
+    const res = await axios.get(`/api/orders/${orderId}/receipt/download`, {
+      responseType: 'blob'
+    })
+    
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Receipt_${orderId}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    showNotification('Receipt downloaded successfully', 'success')
+  } catch (err) {
+    console.error('Error downloading receipt:', err)
+    showNotification('Failed to download receipt', 'error')
+  } finally {
+    downloadingOrder.value = null
   }
 }
 

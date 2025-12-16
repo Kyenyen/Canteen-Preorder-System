@@ -1,5 +1,15 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+    <!-- Notification Toast -->
+    <div v-if="notification.message" 
+        class="fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 z-50"
+        :class="notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'">
+      <div class="flex items-center gap-2">
+        <i :class="notification.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+        <p>{{ notification.message }}</p>
+      </div>
+    </div>
+
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
       <!-- Loading State -->
       <div v-if="isProcessing" class="space-y-4">
@@ -17,10 +27,18 @@
         </div>
         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Payment Successful!</h2>
         <p class="text-gray-600 dark:text-gray-400">Your order has been confirmed and paid.</p>
-        <button @click="goToHome" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition">
-          <i class="fas fa-home mr-2"></i>
-          Go to Home
-        </button>
+        <p class="text-sm text-gray-500 dark:text-gray-500">Payment ID: <span class="font-mono font-semibold">{{ paymentId }}</span></p>
+        <p class="text-sm text-blue-600 dark:text-blue-400"><i class="fas fa-check-circle mr-1"></i> Receipt has been sent to your email</p>
+        <div class="space-y-2 pt-2">
+          <button @click="downloadReceipt" :disabled="downloadingOrder" class="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
+            <i :class="downloadingOrder ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+            {{ downloadingOrder ? 'Downloading...' : 'Download Receipt PDF' }}
+          </button>
+          <button @click="goToHome" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition">
+            <i class="fas fa-home mr-2"></i>
+            Go to Home
+          </button>
+        </div>
       </div>
 
       <!-- Error State -->
@@ -40,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../../js/stores/cart'
 import axios from 'axios'
@@ -51,6 +69,9 @@ const isProcessing = ref(true)
 const status = ref(null)
 const errorMessage = ref('')
 const paymentId = ref('')
+const orderIdRef = ref('')
+const downloadingOrder = ref(false)
+const notification = reactive({ message: null, type: 'success' })
 
 onMounted(async () => {
   const urlParams = new URLSearchParams(window.location.search)
@@ -109,14 +130,25 @@ onMounted(async () => {
       // Clear the cart after successful order creation
       await cartStore.clearCart()
       
+      // Auto-send receipt email
+      if (response.data.order_id) {
+        try {
+          await axios.post(`/api/orders/${response.data.order_id}/request-receipt`)
+          console.log('Receipt email sent automatically')
+        } catch (emailErr) {
+          console.error('Failed to auto-send receipt email:', emailErr)
+        }
+      }
+      
       status.value = 'success'
       paymentId.value = response.data.payment_id || 'N/A'
+      orderIdRef.value = response.data.order_id || ''
       isProcessing.value = false
 
-      // Auto redirect to home after 3 seconds
+      // Auto redirect to home after 15 seconds
       setTimeout(() => {
         goToHome()
-      }, 3000)
+      }, 15000)
 
     } catch (error) {
       console.error('Failed to confirm payment:', error)
@@ -135,6 +167,45 @@ onMounted(async () => {
 
 const goToHome = () => {
   router.push('/home')
+}
+
+const downloadReceipt = async () => {
+  if (!orderIdRef.value) {
+    showNotification('Order ID not found. Please try again.', 'error')
+    return
+  }
+
+  downloadingOrder.value = true
+  try {
+    const res = await axios.get(`/api/orders/${orderIdRef.value}/receipt/download`, {
+      responseType: 'blob'
+    })
+    
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([res.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Receipt_${orderIdRef.value}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    showNotification('Receipt downloaded successfully', 'success')
+  } catch (err) {
+    console.error('Error downloading receipt:', err)
+    showNotification('Failed to download receipt', 'error')
+  } finally {
+    downloadingOrder.value = false
+  }
+}
+
+const showNotification = (message, type = 'success', duration = 3000) => {
+  notification.message = message
+  notification.type = type
+  setTimeout(() => {
+    notification.message = null
+  }, duration)
 }
 </script>
 
