@@ -40,6 +40,9 @@
           <router-link to="/admin" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <i class="fas fa-fire-burner mr-1"></i> Kitchen View
           </router-link>
+          <router-link to="/admin/report" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <i class="fas fa-fire-burner mr-1"></i> Sales Report
+          </router-link>
           <router-link to="/admin/menu" class="px-4 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <i class="fas fa-edit mr-1"></i> Manage Menu
           </router-link>
