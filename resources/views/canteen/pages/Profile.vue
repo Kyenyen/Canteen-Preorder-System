@@ -73,13 +73,11 @@
             </div>
         </div>
 
-        <!-- 2. Change Password Form -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                 <i class="fas fa-lock text-orange-500"></i> Change Password
             </h3>
             
-            <!-- Password Messages -->
             <div v-if="passwordMsg" :class="`mb-4 p-3 rounded-lg text-sm flex items-start gap-2 whitespace-pre-line ${passwordMsgType === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`">
                 <i :class="`fas ${passwordMsgType === 'success' ? 'fa-check-circle mt-1' : 'fa-exclamation-circle mt-1'}`"></i>
                 <span>{{ passwordMsg }}</span>
@@ -88,20 +86,65 @@
             <form @submit.prevent="changePassword" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Current Password</label>
-                    <input type="password" v-model="pwd.current" required class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition">
+                    <div class="relative">
+                        <input 
+                            :type="visibility.current ? 'text' : 'password'" 
+                            v-model="pwd.current" 
+                            required 
+                            class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition pr-10"
+                        >
+                        <button type="button" @click="toggleVisibility('current')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors">
+                            <i :class="visibility.current ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        </button>
+                    </div>
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">New Password</label>
-                        <input type="password" v-model="pwd.new" required class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition">
-                        <p class="text-xs text-gray-400 mt-1">Min. 6 characters</p>
+                        <div class="relative">
+                            <input 
+                                :type="visibility.new ? 'text' : 'password'" 
+                                v-model="pwd.new" 
+                                required 
+                                class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition pr-10"
+                            >
+                            <button type="button" @click="toggleVisibility('new')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors">
+                                <i :class="visibility.new ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                            </button>
+                        </div>
+                        
+                        <div v-if="pwd.new.length > 0" class="mt-2">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] uppercase font-bold text-gray-500">Strength: {{ passwordStrength.label }}</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                <div class="h-full transition-all duration-500" 
+                                    :class="passwordStrength.color"
+                                    :style="{ width: (passwordStrength.score * 25) + '%' }">
+                                </div>
+                            </div>
+                        </div>
+                        <p v-else class="text-xs text-gray-400 mt-1">Min. 6 characters</p>
                     </div>
+
                     <div>
                         <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Confirm Password</label>
-                        <input type="password" v-model="pwd.confirm" required class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition">
+                        <div class="relative">
+                            <input 
+                                :type="visibility.confirm ? 'text' : 'password'" 
+                                v-model="pwd.confirm" 
+                                required 
+                                class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition pr-10"
+                            >
+                            <button type="button" @click="toggleVisibility('confirm')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors">
+                                <i :class="visibility.confirm ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="flex justify-end">
+
+                <div class="flex justify-end pt-2">
                     <button type="submit" :disabled="passwordLoading" class="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 transition text-sm shadow-md flex items-center gap-2 disabled:opacity-50">
                         <i v-if="passwordLoading" class="fas fa-spinner fa-spin"></i>
                         <span>Change Password</span>
@@ -109,7 +152,6 @@
                 </div>
             </form>
         </div>
-
       </div>
     </div>
   </div>
@@ -143,6 +185,33 @@ const pwd = reactive({
     current: '',
     new: '',
     confirm: ''
+})
+
+const visibility = reactive({
+    current: false,
+    new: false,
+    confirm: false
+})
+
+const toggleVisibility = (field) => {
+    visibility[field] = !visibility[field]
+}
+
+const passwordStrength = computed(() => {
+  const p = pwd.new
+  if (!p) return { score: 0, label: '', color: 'bg-gray-200' }
+  if (p.length < 6) return { score: 1, label: 'Weak', color: 'bg-red-500' }
+  
+  let score = 0
+  if (p.length >= 8) score++
+  if (/[A-Z]/.test(p)) score++
+  if (/[0-9]/.test(p)) score++
+  if (/[^A-Za-z0-9]/.test(p)) score++
+
+  if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-red-500' }
+  if (score === 2) return { score: 2, label: 'Fair', color: 'bg-yellow-500' }
+  if (score === 3) return { score: 3, label: 'Good', color: 'bg-blue-500' }
+  return { score: 4, label: 'Strong', color: 'bg-green-500' }
 })
 
 onMounted(async () => {
@@ -215,6 +284,11 @@ const updateProfile = async () => {
 
 const changePassword = async () => {
     passwordMsg.value = '' 
+
+    if (pwd.new && passwordStrength.value.score < 2) {
+        showMsg('password', 'Please use a stronger password.', 'error')
+        return
+    }
     
     passwordLoading.value = true
     try {

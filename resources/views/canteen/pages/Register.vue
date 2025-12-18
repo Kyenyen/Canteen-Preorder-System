@@ -32,14 +32,46 @@
           <input type="email" v-model="email" placeholder="@student.tarc.edu.my" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white" :disabled="!!successMessage">
         </div>
 
-        <div>
+        <div class="relative">
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Password</label>
-          <input type="password" v-model="password" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white" :disabled="!!successMessage">
+          <div class="relative">
+            <input 
+              :type="showPassword ? 'text' : 'password'" 
+              v-model="password" 
+              class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white pr-10" 
+              :disabled="!!successMessage"
+            >
+            <button 
+              type="button" 
+              @click="togglePassword" 
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
+
+          <div v-if="password.length > 0" class="mt-2">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-[10px] uppercase font-bold text-gray-500">Strength: {{ passwordStrength.label }}</span>
+            </div>
+            <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+              <div 
+                class="h-full transition-all duration-500" 
+                :class="passwordStrength.color"
+                :style="{ width: (passwordStrength.score * 25) + '%' }"
+              ></div>
+            </div>
+          </div>
         </div>
 
         <div>
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Confirm Password</label>
-          <input type="password" v-model="password_confirmation" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white" :disabled="!!successMessage">
+          <input 
+            :type="showPassword ? 'text' : 'password'" 
+            v-model="password_confirmation" 
+            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white" 
+            :disabled="!!successMessage"
+          >
         </div>
 
         <button type="submit" :disabled="loading || !!successMessage" class="w-full bg-gray-900 dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 mt-2 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -58,24 +90,50 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../../js/stores/auth'
 
 const username = ref('')
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const password_confirmation = ref('')
 const errorMessage = ref('')
-const successMessage = ref('') // NEW: State for success message
+const successMessage = ref('') 
 const loading = ref(false)
 
 const router = useRouter()
 const authStore = useAuthStore()
 
+const passwordStrength = computed(() => {
+  const p = password.value
+  if (!p) return { score: 0, label: '', color: 'bg-gray-200' }
+  if (p.length < 6) return { score: 1, label: 'Weak', color: 'bg-red-500' }
+  
+  let score = 0
+  if (p.length >= 8) score++
+  if (/[A-Z]/.test(p)) score++
+  if (/[0-9]/.test(p)) score++
+  if (/[^A-Za-z0-9]/.test(p)) score++
+
+  if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-red-500' }
+  if (score === 2) return { score: 2, label: 'Fair', color: 'bg-yellow-500' }
+  if (score === 3) return { score: 3, label: 'Good', color: 'bg-blue-500' }
+  return { score: 4, label: 'Strong', color: 'bg-green-500' }
+})
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
+
 const handleRegister = async () => {
   errorMessage.value = ''
   successMessage.value = ''
+  if (passwordStrength.value.score < 2) {
+    errorMessage.value = 'Please use a stronger password.'
+    return
+  }
   loading.value = true
 
   try {

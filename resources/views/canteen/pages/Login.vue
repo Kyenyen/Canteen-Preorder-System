@@ -36,12 +36,20 @@
 
         <div>
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Password</label>
-          <input 
-            type="password" 
-            v-model="password" 
-            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white"
-          >
-          <!-- Helper Text & Forgot Password Link Container -->
+          <div class="relative"> <input 
+              :type="showPassword ? 'text' : 'password'" 
+              v-model="password" 
+              class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white pr-12"
+            >
+            <button 
+              type="button" 
+              @click="togglePassword" 
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors px-2"
+            >
+              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
+          
           <div class="flex justify-between items-center mt-1">
             <router-link to="/forgot-password" class="text-xs text-orange-600 dark:text-orange-400 underline hover:text-orange-700 dark:hover:text-orange-300 transition-colors font-bold">
               Forgot Password?
@@ -72,11 +80,16 @@ import { useRouter } from 'vue-router'
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const errorMessage = ref('')
 const loading = ref(false)
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+const togglePassword = () => {
+  showPassword.value = !showPassword.value
+}
 
 const handleLogin = async () => {
   errorMessage.value = ''
