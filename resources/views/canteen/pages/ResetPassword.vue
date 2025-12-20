@@ -24,43 +24,51 @@
 
       <!-- Form -->
       <form @submit.prevent="handleChangePassword" class="space-y-5" v-if="!successMessage">
-        <!-- Hidden Email Field (Visual only, usually readonly) -->
         <div>
           <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email Address</label>
-          <input 
-            type="email" 
-            :value="email" 
-            disabled
-            class="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 cursor-not-allowed"
-          >
+          <input type="email" :value="email" disabled class="w-full p-3 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-500 dark:text-gray-400 cursor-not-allowed">
         </div>
 
-        <div>
+        <div class="relative">
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">New Password</label>
-          <input 
-            type="password" 
-            v-model="password" 
-            placeholder="Min. 6 characters"
-            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white"
-            required
-          >
+          <div class="relative">
+            <input 
+              :type="showPassword ? 'text' : 'password'" 
+              v-model="password" 
+              placeholder="Min. 6 characters"
+              class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white pr-10"
+              required
+            >
+            <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors">
+              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
+
+          <div v-if="password.length > 0" class="mt-2">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-[10px] uppercase font-bold text-gray-500">Strength: {{ passwordStrength.label }}</span>
+            </div>
+            <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+              <div class="h-full transition-all duration-500" :class="passwordStrength.color" :style="{ width: (passwordStrength.score * 25) + '%' }"></div>
+            </div>
+          </div>
         </div>
 
         <div>
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Confirm Password</label>
           <input 
-            type="password" 
+            :type="showPassword ? 'text' : 'password'" 
             v-model="passwordConfirmation" 
             placeholder="Re-enter password"
-            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white"
+            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white"
             required
           >
         </div>
 
         <button 
           type="submit" 
-          :disabled="loading"
-          class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50"
+          :disabled="loading || (password.length > 0 && passwordStrength.score < 2)"
+          class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span v-if="loading"><i class="fas fa-spinner fa-spin mr-2"></i>Changing...</span>
           <span v-else>Change Password</span>
@@ -79,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 
@@ -89,6 +97,7 @@ const router = useRouter()
 const email = ref('')
 const token = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const passwordConfirmation = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
@@ -102,6 +111,23 @@ onMounted(() => {
   if (!token.value) {
     errorMessage.value = "Invalid password change link."
   }
+})
+
+const passwordStrength = computed(() => {
+  const p = password.value
+  if (!p) return { score: 0, label: '', color: 'bg-gray-200' }
+  if (p.length < 6) return { score: 1, label: 'Weak', color: 'bg-red-500' }
+  
+  let score = 0
+  if (p.length >= 8) score++
+  if (/[A-Z]/.test(p)) score++
+  if (/[0-9]/.test(p)) score++
+  if (/[^A-Za-z0-9]/.test(p)) score++
+
+  if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-red-500' }
+  if (score === 2) return { score: 2, label: 'Fair', color: 'bg-yellow-500' }
+  if (score === 3) return { score: 3, label: 'Good', color: 'bg-blue-500' }
+  return { score: 4, label: 'Strong', color: 'bg-green-500' }
 })
 
 const handleChangePassword = async () => {

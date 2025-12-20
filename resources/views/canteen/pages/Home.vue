@@ -12,7 +12,7 @@
 
     <div class="p-6 max-w-4xl mx-auto w-full space-y-8 pb-20">
       
-      <!-- Active Order Status Widget (Student Only) -->
+      <!-- Active Order Status Widget (User Only) -->
       <div
         v-if="activeOrder && !isAdmin"
         class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border-l-8 border-orange-500 cursor-pointer hover:shadow-xl transition transform hover:-translate-y-1"
@@ -60,7 +60,7 @@
       <!-- Quick Shortcuts -->
       <div class="grid gap-4" :class="isAdmin ? 'grid-cols-1' : 'grid-cols-2'">
         
-        <!-- Menu Button (Dynamic for Admin/Student) -->
+        <!-- Menu Button (Dynamic for Admin/User) -->
         <div
           @click="goToMenu"
           class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-700 hover:shadow-md transition cursor-pointer group"
@@ -119,7 +119,7 @@ const authStore = useAuthStore()
 
 // Check role
 const isAdmin = computed(() => authStore.user?.role === 'admin')
-const greetingMessage = computed(() => `Welcome back, ${authStore.user?.username || 'Student'}!`)
+const greetingMessage = computed(() => `Welcome back, ${authStore.user?.username || 'User'}!`)
 
 // Initial State
 const activeOrder = ref(null)

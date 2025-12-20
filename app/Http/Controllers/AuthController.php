@@ -26,7 +26,7 @@ class AuthController extends Controller
                 'email',
                 'max:100',
                 'unique:users',
-                'regex:/@(student|admin)\.tarc\.edu\.my$/i'
+                'regex:/@(student\.tarc\.edu\.my|tarc\.edu\.my)$/i'
             ],
             'password' => 'required|string|min:6|confirmed',
         ], [
@@ -35,16 +35,13 @@ class AuthController extends Controller
             'email.required' => 'An email address is required.',
             'email.email' => 'Please enter a valid email format.',
             'email.unique' => 'This email is already registered.',
-            'email.regex' => 'You must use a valid TARC email (@student.tarc.edu.my or @admin.tarc.edu.my).',
+            'email.regex' => 'You must use a valid TARC email (@student.tarc.edu.my or @tarc.edu.my).',
             'password.required' => 'A password is required.',
             'password.min' => 'Password must be at least 6 characters.',
             'password.confirmed' => 'The password confirmation does not match.',
         ]);
 
-        $role = 'student';
-        if (Str::endsWith($validated['email'], '@admin.tarc.edu.my')) {
-            $role = 'admin';
-        }
+        $role = 'user';
 
         $lastUser = User::orderBy('user_id', 'desc')->first();
 
@@ -164,19 +161,15 @@ class AuthController extends Controller
 
         if ($request->hasFile('photo')) {
             // 1. Delete old photo if it exists in 'public/photos'
-            // Using public_path() for direct file access
             if ($user->photo && file_exists(public_path($user->photo))) {
                 unlink(public_path($user->photo));
             }
 
-            // 2. Store new photo in 'photos' folder
             $file = $request->file('photo');
             $filename = time() . '_' . $file->getClientOriginalName();
             
-            // Move directly to public folder (no symlink needed)
             $file->move(public_path('photos'), $filename);
             
-            // 3. Save relative path
             $user->photo = 'photos/' . $filename; 
         }
 
@@ -193,7 +186,6 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        // Consolidated validation with messages
         $request->validate([
             'current_password' => ['required'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
@@ -204,7 +196,6 @@ class AuthController extends Controller
             'password.confirmed' => 'The password confirmation does not match.',
         ]);
 
-        // Check DB Match
         if (!Hash::check($request->current_password, $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['The current password you entered is incorrect.']

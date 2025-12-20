@@ -35,7 +35,7 @@
             <h2 class="text-xl font-bold text-gray-800 dark:text-white">{{ user?.username || 'User' }}</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ user?.email || '' }}</p>
             <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold uppercase rounded-full tracking-wider">
-                {{ user?.role || 'Student' }}
+                {{ user?.role || 'User' }}
             </span>
         </div>
       </div>

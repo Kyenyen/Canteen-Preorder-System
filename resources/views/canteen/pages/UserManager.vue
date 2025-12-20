@@ -50,7 +50,7 @@
               <!-- Role -->
               <td class="px-6 py-4">
                 <span :class="user.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'" class="px-3 py-1 text-xs font-bold rounded-full">
-                  {{ user.role === 'admin' ? 'Admin' : 'Student' }}
+                  {{ user.role === 'admin' ? 'Admin' : 'User' }}
                 </span>
               </td>
               
@@ -102,7 +102,7 @@
           <div>
               <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Role</label>
               <select v-model="form.role" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
-                <option value="student">Student</option>
+                <option value="user">User</option>
                 <option value="admin">Admin</option>
               </select>
           </div>
@@ -269,7 +269,7 @@ const form = reactive({
     id: null,
     username: '',
     email: '',
-    role: 'student',
+    role: 'user',
     password: ''
 })
 
@@ -310,7 +310,7 @@ const openModal = (user = null) => {
         form.id = null
         form.username = ''
         form.email = ''
-        form.role = 'student'
+        form.role = 'user'
         form.password = ''
     }
     

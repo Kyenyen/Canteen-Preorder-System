@@ -29,7 +29,7 @@
 
         <div>
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">TARC Email</label>
-          <input type="email" v-model="email" placeholder="@student.tarc.edu.my" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white" :disabled="!!successMessage">
+          <input type="email" v-model="email" placeholder="@student.tarc.edu.my / @tarc.edu.my" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white" :disabled="!!successMessage">
         </div>
 
         <div class="relative">

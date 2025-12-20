@@ -25,13 +25,9 @@
           <input 
             type="email" 
             v-model="email" 
-            placeholder="name@student.tarc.edu.my" 
+            placeholder="@student.tarc.edu.my / @tarc.edu.my" 
             class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
           >
-          <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Students: <span class="font-mono text-orange-600 dark:text-orange-400">@student.tarc.edu.my</span><br>
-            Admin: <span class="font-mono text-orange-600 dark:text-orange-400">@admin.tarc.edu.my</span>
-          </p>
         </div>
 
         <div>
@@ -98,7 +94,7 @@ const handleLogin = async () => {
   try {
     await authStore.login(email.value, password.value)
     
-    // Redirect based on role (Admin vs Student)
+    // Redirect based on role (Admin vs User)
     if (authStore.user?.role === 'admin') {
         router.push('/admin')
     } else {

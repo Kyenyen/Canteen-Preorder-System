@@ -23,7 +23,7 @@
         <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
           <tr>
             <th class="px-6 py-4">ID</th>
-            <th class="px-6 py-4">Student</th>
+            <th class="px-6 py-4">User</th>
             <th class="px-6 py-4">Items</th>
             <th class="px-6 py-4">Pickup</th>
             <th class="px-6 py-4">Total</th>

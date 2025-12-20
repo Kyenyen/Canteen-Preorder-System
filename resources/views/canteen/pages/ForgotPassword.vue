@@ -8,7 +8,7 @@
           <i class="fas fa-lock-open"></i>
         </div>
         <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Forgot Password</h2>
-        <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Enter your student email to receive a reset link.</p>
+        <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">Enter your email to receive a reset link.</p>
       </div>
 
       <!-- Success Message -->
@@ -30,7 +30,7 @@
           <input 
             type="email" 
             v-model="email" 
-            placeholder="name@student.tarc.edu.my" 
+            placeholder="@student.tarc.edu.my / @tarc.edu.my" 
             class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             required
           >
