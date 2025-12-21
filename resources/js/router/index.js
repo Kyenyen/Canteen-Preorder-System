@@ -17,6 +17,7 @@ import ForgotPassword from '../../views/canteen/pages/ForgotPassword.vue'
 import ResetPassword from '../../views/canteen/pages/ResetPassword.vue'
 import Profile from '../../views/canteen/pages/Profile.vue'
 import PaymentSuccess from '../../views/canteen/pages/PaymentSuccess.vue'
+import OrderDetails from '../../views/canteen/pages/OrderDetails.vue'
 
 const routes = [
     {
@@ -49,6 +50,11 @@ const routes = [
         path: '/history',
         component: History,
         meta: { requiresAuth: true, title: 'My Orders' }
+    },
+    {
+        path: '/order/:id',
+        component: OrderDetails,
+        meta: { requiresAuth: true, title: 'Order Details' }
     },
     {
         path: '/forgot-password',

@@ -112,4 +112,16 @@ class OrderController extends Controller
             return response()->json(['message' => 'Failed to send cancellation email'], 500);
         }
     }
+
+    // 7. Get Single Order (Student)
+    public function show($id)
+    {
+        // Find order belonging to the logged-in user
+        $order = Order::where('order_id', $id)
+                      ->where('user_id', Auth::id())
+                      ->with(['products', 'payment'])
+                      ->firstOrFail();
+
+        return response()->json($order);
+    }
 }

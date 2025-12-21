@@ -27,17 +27,7 @@
         <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Payment Successful!</h2>
         <p class="text-gray-600 dark:text-gray-400">Your order has been confirmed and paid.</p>
         <p class="text-sm text-gray-500 dark:text-gray-500">Payment ID: <span class="font-mono font-semibold">{{ paymentId }}</span></p>
-        <p class="text-sm text-blue-600 dark:text-blue-400"><i class="fas fa-check-circle mr-1"></i> Receipt has been sent to your email</p>
-        <div class="space-y-2 pt-2">
-          <button @click="downloadReceipt" :disabled="downloadingOrder" class="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2">
-            <i :class="downloadingOrder ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
-            {{ downloadingOrder ? 'Downloading...' : 'Download Receipt PDF' }}
-          </button>
-          <button @click="goToHome" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition">
-            <i class="fas fa-home mr-2"></i>
-            Go to Home
-          </button>
-        </div>
+        <p class="text-sm text-blue-600 dark:text-blue-400"><i class="fas fa-envelope mr-1"></i> Receipt has been sent to your email</p>
       </div>
 
       <!-- Error State -->
@@ -145,10 +135,10 @@ onMounted(async () => {
       orderIdRef.value = response.data.order_id || ''
       isProcessing.value = false
 
-      // Auto redirect to home after 15 seconds
+      // Auto redirect to Order Details page after 5 seconds
       setTimeout(() => {
-        goToHome()
-      }, 15000)
+        router.push(`/order/${orderIdRef.value}`)
+      }, 2500)
 
     } catch (error) {
       console.error('Failed to confirm payment:', error)
@@ -164,41 +154,6 @@ onMounted(async () => {
     isProcessing.value = false
   }
 })
-
-const goToHome = () => {
-  router.push('/home')
-}
-
-const downloadReceipt = async () => {
-  if (!orderIdRef.value) {
-    showNotification('Order ID not found. Please try again.', 'error')
-    return
-  }
-
-  downloadingOrder.value = true
-  try {
-    const res = await axios.get(`/api/orders/${orderIdRef.value}/receipt/download`, {
-      responseType: 'blob'
-    })
-    
-    // Create blob link to download
-    const url = window.URL.createObjectURL(new Blob([res.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `Receipt_${orderIdRef.value}.pdf`)
-    document.body.appendChild(link)
-    link.click()
-    link.parentNode.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    
-    showNotification('Receipt downloaded successfully', 'success')
-  } catch (err) {
-    console.error('Error downloading receipt:', err)
-    showNotification('Failed to download receipt', 'error')
-  } finally {
-    downloadingOrder.value = false
-  }
-}
 
 const showNotification = (message, type = 'success', duration = 3000) => {
   notification.title = type === 'success' ? 'Success' : 'Error'
