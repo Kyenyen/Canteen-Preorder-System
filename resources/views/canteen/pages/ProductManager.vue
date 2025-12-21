@@ -27,10 +27,34 @@
           <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-gray-700">
             <tr>
               <th class="px-6 py-4">Image</th>
-              <th class="px-6 py-4">Name</th>
-              <th class="px-6 py-4">Category</th>
-              <th class="px-6 py-4">Price</th>
-              <th class="px-6 py-4">Status</th>
+              <th @click="toggleSort('name')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+                <div class="flex items-center gap-2">
+                  Name
+                  <i v-if="sortBy === 'name'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                  <i v-else class="fas fa-sort text-xs opacity-30"></i>
+                </div>
+              </th>
+              <th @click="toggleSort('category')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+                <div class="flex items-center gap-2">
+                  Category
+                  <i v-if="sortBy === 'category'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                  <i v-else class="fas fa-sort text-xs opacity-30"></i>
+                </div>
+              </th>
+              <th @click="toggleSort('price')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+                <div class="flex items-center gap-2">
+                  Price
+                  <i v-if="sortBy === 'price'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                  <i v-else class="fas fa-sort text-xs opacity-30"></i>
+                </div>
+              </th>
+              <th @click="toggleSort('is_available')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+                <div class="flex items-center gap-2">
+                  Status
+                  <i v-if="sortBy === 'is_available'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                  <i v-else class="fas fa-sort text-xs opacity-30"></i>
+                </div>
+              </th>
               <th class="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -41,7 +65,7 @@
             <tr v-else-if="products.length === 0">
                 <td colspan="6" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No products found.</td>
             </tr>
-            <tr v-for="product in products" :key="product.product_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+            <tr v-for="product in sortedProducts" :key="product.product_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
               
               <!-- Image -->
               <td class="px-6 py-4">
@@ -201,7 +225,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import '@fortawesome/fontawesome-free/css/all.css' 
 
@@ -215,6 +239,43 @@ const loadingCategories = ref(false)
 const fileInput = ref(null)
 const previewUrl = ref(null)
 const selectedFile = ref(null)
+const sortBy = ref('name')
+const sortOrder = ref('asc')
+
+const toggleSort = (column) => {
+  if (sortBy.value === column) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortOrder.value = 'asc'
+  }
+}
+
+const sortedProducts = computed(() => {
+  return [...products.value].sort((a, b) => {
+    let aVal, bVal
+    
+    if (sortBy.value === 'category') {
+      aVal = typeof a.category === 'object' ? a.category.name : a.category
+      bVal = typeof b.category === 'object' ? b.category.name : b.category
+      aVal = aVal ? aVal.toLowerCase() : ''
+      bVal = bVal ? bVal.toLowerCase() : ''
+    } else if (sortBy.value === 'price') {
+      aVal = parseFloat(a.price)
+      bVal = parseFloat(b.price)
+    } else if (sortBy.value === 'is_available') {
+      aVal = a.is_available ? 1 : 0
+      bVal = b.is_available ? 1 : 0
+    } else {
+      aVal = a[sortBy.value] ? a[sortBy.value].toLowerCase() : ''
+      bVal = b[sortBy.value] ? b[sortBy.value].toLowerCase() : ''
+    }
+    
+    if (aVal < bVal) return sortOrder.value === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+})
 
 const showDeleteModal = ref(false) 
 const productToDelete = reactive({ id: null, name: '' }) 

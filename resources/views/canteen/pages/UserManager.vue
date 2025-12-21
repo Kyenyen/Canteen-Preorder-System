@@ -27,9 +27,27 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-medium border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th class="px-6 py-4">Username</th>
-              <th class="px-6 py-4">Email</th>
-              <th class="px-6 py-4">Role</th>
+              <th @click="toggleSort('username')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+                <div class="flex items-center gap-2">
+                  Username
+                  <i v-if="sortBy === 'username'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                  <i v-else class="fas fa-sort text-xs opacity-30"></i>
+                </div>
+              </th>
+              <th @click="toggleSort('email')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+                <div class="flex items-center gap-2">
+                  Email
+                  <i v-if="sortBy === 'email'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                  <i v-else class="fas fa-sort text-xs opacity-30"></i>
+                </div>
+              </th>
+              <th @click="toggleSort('role')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+                <div class="flex items-center gap-2">
+                  Role
+                  <i v-if="sortBy === 'role'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                  <i v-else class="fas fa-sort text-xs opacity-30"></i>
+                </div>
+              </th>
               <th class="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -40,7 +58,7 @@
             <tr v-else-if="users.length === 0">
                 <td colspan="4" class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No users found.</td>
             </tr>
-            <tr v-for="user in users" :key="user.user_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+            <tr v-for="user in sortedUsers" :key="user.user_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
               
               <!-- Username -->
               <td class="px-6 py-4 font-semibold text-gray-900 dark:text-white">{{ user.username }}</td>
@@ -242,7 +260,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import '@fortawesome/fontawesome-free/css/all.css'
 import Notification from '../components/Notification.vue'
@@ -253,6 +271,33 @@ const showModal = ref(false)
 const isEditing = ref(false)
 const loading = ref(false)
 const modalError = ref('')
+const sortBy = ref('username')
+const sortOrder = ref('asc')
+
+const toggleSort = (column) => {
+  if (sortBy.value === column) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortOrder.value = 'asc'
+  }
+}
+
+const sortedUsers = computed(() => {
+  return [...users.value].sort((a, b) => {
+    let aVal = a[sortBy.value]
+    let bVal = b[sortBy.value]
+    
+    if (typeof aVal === 'string') {
+      aVal = aVal.toLowerCase()
+      bVal = bVal.toLowerCase()
+    }
+    
+    if (aVal < bVal) return sortOrder.value === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+})
 const notification = reactive({ show: false, title: '', message: '', type: 'success' })
 
 const showDeleteModal = ref(false)

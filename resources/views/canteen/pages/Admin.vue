@@ -18,10 +18,10 @@
       
       <!-- Status Filter -->
       <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Filter by Status:</label>
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Filter:</label>
         <select 
           v-model="selectedStatus" 
-          class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none transition-colors"
+          class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none transition-colors"
         >
           <option value="All">All Orders</option>
           <option value="Preparing">Preparing</option>
@@ -40,9 +40,27 @@
             <th class="px-6 py-4">ID</th>
             <th class="px-6 py-4">User</th>
             <th class="px-6 py-4">Items</th>
-            <th class="px-6 py-4">Pickup</th>
-            <th class="px-6 py-4">Total</th>
-            <th class="px-6 py-4">Status</th>
+            <th @click="toggleSort('pickup_time')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+              <div class="flex items-center gap-2">
+                Pickup Time
+                <i v-if="sortBy === 'pickup_time'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                <i v-else class="fas fa-sort text-xs opacity-30"></i>
+              </div>
+            </th>
+            <th @click="toggleSort('total')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+              <div class="flex items-center gap-2">
+                Total
+                <i v-if="sortBy === 'total'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                <i v-else class="fas fa-sort text-xs opacity-30"></i>
+              </div>
+            </th>
+            <th @click="toggleSort('status')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
+              <div class="flex items-center gap-2">
+                Status
+                <i v-if="sortBy === 'status'" :class="sortOrder === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs"></i>
+                <i v-else class="fas fa-sort text-xs opacity-30"></i>
+              </div>
+            </th>
             <th class="px-6 py-4 text-right">Action</th>
           </tr>
         </thead>
@@ -110,12 +128,57 @@ import axios from 'axios'
 
 const orders = ref([])
 const selectedStatus = ref('All')
+const sortBy = ref('date')
+const sortOrder = ref('desc')
+
+const toggleSort = (column) => {
+  if (sortBy.value === column) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortOrder.value = 'asc'
+  }
+}
 
 const filteredOrders = computed(() => {
-  if (selectedStatus.value === 'All') {
-    return orders.value
+  let filtered = orders.value
+  
+  // Filter by status
+  if (selectedStatus.value !== 'All') {
+    filtered = filtered.filter(order => order.status === selectedStatus.value)
   }
-  return orders.value.filter(order => order.status === selectedStatus.value)
+  
+  // Sort
+  const sorted = [...filtered].sort((a, b) => {
+    let aVal, bVal
+    
+    switch(sortBy.value) {
+      case 'date':
+        aVal = new Date(a.date)
+        bVal = new Date(b.date)
+        break
+      case 'pickup_time':
+        aVal = a.pickup_time
+        bVal = b.pickup_time
+        break
+      case 'total':
+        aVal = parseFloat(a.total)
+        bVal = parseFloat(b.total)
+        break
+      case 'status':
+        aVal = a.status
+        bVal = b.status
+        break
+      default:
+        return 0
+    }
+    
+    if (aVal < bVal) return sortOrder.value === 'asc' ? -1 : 1
+    if (aVal > bVal) return sortOrder.value === 'asc' ? 1 : -1
+    return 0
+  })
+  
+  return sorted
 })
 
 const fetchOrders = async () => {
