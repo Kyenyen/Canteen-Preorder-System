@@ -16,10 +16,12 @@ class SalesReportController extends Controller
      */
     public function getSalesReport()
     {
-        // Get total revenue (only paid orders)
+        // Get total revenue (only paid orders, exclude cancelled)
         $totalRevenue = Order::whereHas('payment', function ($query) {
             $query->where('refunded', false);
-        })->sum('total');
+        })
+        ->where('status', '!=', 'Cancelled')
+        ->sum('total');
 
         // Get total orders (all orders)
         $totalOrders = Order::count();
@@ -31,6 +33,7 @@ class SalesReportController extends Controller
         $dailyRevenue = Order::whereHas('payment', function ($query) {
             $query->where('refunded', false);
         })
+            ->where('status', '!=', 'Cancelled')
             ->where('date', '>=', now()->subDays(30)->toDateString())
             ->groupBy('date')
             ->orderBy('date')
@@ -84,6 +87,7 @@ class SalesReportController extends Controller
                     ->join('orders', 'orderlist.order_id', '=', 'orders.order_id')
                     ->join('payments', 'orders.order_id', '=', 'payments.order_id')
                     ->where('payments.refunded', false)
+                    ->where('orders.status', '!=', 'Cancelled')
                     ->sum('orderlist.subtotal');
 
                 return [
@@ -111,6 +115,7 @@ class SalesReportController extends Controller
             ->join('orders', 'orderlist.order_id', '=', 'orders.order_id')
             ->join('payments', 'orders.order_id', '=', 'payments.order_id')
             ->where('payments.refunded', false)
+            ->where('orders.status', '!=', 'Cancelled')
             ->with('category:category_id,name')
             ->groupBy('products.product_id', 'products.name', 'products.price', 'products.photo', 'products.category_id')
             ->orderBy('total_quantity', 'desc')
@@ -143,16 +148,19 @@ class SalesReportController extends Controller
             'today_revenue' => (float) Order::whereHas('payment', function ($query) {
                 $query->where('refunded', false);
             })
+                ->where('status', '!=', 'Cancelled')
                 ->where('date', now()->toDateString())
                 ->sum('total'),
             'this_week_revenue' => (float) Order::whereHas('payment', function ($query) {
                 $query->where('refunded', false);
             })
+                ->where('status', '!=', 'Cancelled')
                 ->where('date', '>=', now()->startOfWeek()->toDateString())
                 ->sum('total'),
             'this_month_revenue' => (float) Order::whereHas('payment', function ($query) {
                 $query->where('refunded', false);
             })
+                ->where('status', '!=', 'Cancelled')
                 ->where('date', '>=', now()->startOfMonth()->toDateString())
                 ->sum('total'),
         ];
