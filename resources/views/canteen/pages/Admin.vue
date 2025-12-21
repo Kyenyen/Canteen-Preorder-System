@@ -15,6 +15,21 @@
           <p class="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">Track and manage all customer orders</p>
         </div>
       </div>
+      
+      <!-- Status Filter -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Filter by Status:</label>
+        <select 
+          v-model="selectedStatus" 
+          class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none transition-colors"
+        >
+          <option value="All">All Orders</option>
+          <option value="Preparing">Preparing</option>
+          <option value="Ready">Ready</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
     </div>
 
     <!-- Orders Table -->
@@ -32,7 +47,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300 transition-colors duration-300">
-          <tr v-for="order in orders" :key="order.order_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
+          <tr v-for="order in filteredOrders" :key="order.order_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
             <td class="px-6 py-4 font-mono text-xs">{{ order.order_id }}</td>
             <td class="px-6 py-4 font-medium">{{ order.user ? order.user.username : 'Unknown' }}</td>
             <td class="px-6 py-4">
@@ -80,9 +95,9 @@
       </table>
       
       <!-- Empty State -->
-      <div v-if="orders.length === 0" class="text-center py-10 text-gray-400 dark:text-gray-500">
+      <div v-if="filteredOrders.length === 0" class="text-center py-10 text-gray-400 dark:text-gray-500">
         <i class="fas fa-clipboard-list text-4xl mb-3 opacity-50"></i>
-        <p>No active orders found.</p>
+        <p>No orders found for the selected status.</p>
       </div>
     </div>
     
@@ -94,6 +109,14 @@ import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 
 const orders = ref([])
+const selectedStatus = ref('All')
+
+const filteredOrders = computed(() => {
+  if (selectedStatus.value === 'All') {
+    return orders.value
+  }
+  return orders.value.filter(order => order.status === selectedStatus.value)
+})
 
 const fetchOrders = async () => {
   try {
