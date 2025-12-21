@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -88,7 +89,6 @@ class AuthController extends Controller
             'email.email' => 'Please enter a valid email format.',
             'password.required' => 'Please enter your password.',
             'g-recaptcha-response.required' => 'Please complete the Captcha verification.',
-            'g-recaptcha-response.recaptcha' => 'Captcha verification failed.',
         ]);
 
         if (!$this->verifyCaptcha($request->input('g-recaptcha-response'))) {
@@ -103,9 +103,16 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = User::where('email', $request['email'])->firstOrFail();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        // -----------------------------
+
+        $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken;
-        return response()->json(['token' => $token, 'user' => $user]);
+
+        return response()->json([
+            'token' => $token, 
+            'user' => $user
+        ]);
     }
 
     private function verifyCaptcha($token)
