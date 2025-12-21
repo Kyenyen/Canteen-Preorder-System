@@ -90,6 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Sales Report
             Route::get('/sales-report', [SalesReportController::class, 'getSalesReport']);
+            Route::get('/sales-report/pdf', [SalesReportController::class, 'generatePDF']);
 
             // User Management
             Route::get('/users', [UserController::class, 'index']);

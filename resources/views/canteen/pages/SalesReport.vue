@@ -8,10 +8,16 @@
           <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Sales Report</h1>
           <p class="text-gray-500 dark:text-gray-400 text-sm">View revenue, orders, and performance analytics.</p>
         </div>
-        <button @click="refreshReport" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg shadow-md transition flex items-center gap-2" :disabled="loading">
-          <i :class="loading ? 'fas fa-spinner fa-spin' : 'fas fa-sync'"></i>
-          Refresh
-        </button>
+        <div class="flex items-center gap-3">
+          <button @click="downloadPDF" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg transition transform active:scale-95 flex items-center gap-2 font-bold" :disabled="loading || downloading">
+            <i :class="downloading ? 'fas fa-spinner fa-spin' : 'fas fa-file-pdf'"></i>
+            {{ downloading ? 'Generating...' : 'Download PDF' }}
+          </button>
+          <button @click="refreshReport" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg transition transform active:scale-95 flex items-center gap-2 font-bold" :disabled="loading">
+            <i :class="loading ? 'fas fa-spinner fa-spin' : 'fas fa-sync'"></i>
+            Refresh
+          </button>
+        </div>
       </div>
     </div>
 
@@ -232,6 +238,7 @@ import '@fortawesome/fontawesome-free/css/all.css'
 
 // State
 const loading = ref(false)
+const downloading = ref(false)
 const revenueStats = reactive({
   total_revenue: 0,
   average_order_value: 0,
@@ -489,6 +496,34 @@ const initializeCategoryRevenueChart = () => {
       },
     },
   })
+}
+
+const downloadPDF = async () => {
+  downloading.value = true
+  try {
+    const response = await axios.get('/api/admin/sales-report/pdf', {
+      responseType: 'blob'
+    })
+    
+    // Create a URL for the blob
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    
+    // Generate filename with current date
+    const date = new Date().toISOString().split('T')[0]
+    link.setAttribute('download', `sales-report-${date}.pdf`)
+    
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Error downloading PDF:', err)
+    alert('Failed to download PDF. Please try again.')
+  } finally {
+    downloading.value = false
+  }
 }
 
 const refreshReport = () => {
