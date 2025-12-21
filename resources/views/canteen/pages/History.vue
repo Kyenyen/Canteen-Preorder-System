@@ -136,19 +136,117 @@
             <div class="flex gap-2">
               <button 
                 v-if="order.status === 'Completed'"
+                @click="viewReceipt(order.order_id)"
+                class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5">
+                <i class="fas fa-eye text-xs"></i>
+                View
+              </button>
+              <button 
+                v-if="order.status === 'Completed'"
+                @click="sendEmailReceipt(order.order_id)"
+                :disabled="sendingEmail === order.order_id"
+                class="px-3 py-1.5 border-2 border-orange-500 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-50 text-sm font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
+                <i :class="sendingEmail === order.order_id ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-envelope text-xs'"></i>
+                Email
+              </button>
+              <button 
+                v-if="order.status === 'Completed'"
                 @click="downloadReceipt(order.order_id)"
                 :disabled="downloadingOrder === order.order_id"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2">
-                <i :class="downloadingOrder === order.order_id ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
-                Receipt
+                class="px-3 py-1.5 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 text-sm font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-1.5">
+                <i :class="downloadingOrder === order.order_id ? 'fas fa-spinner fa-spin text-xs' : 'fas fa-download text-xs'"></i>
+                PDF
               </button>
               <button 
                 @click="reorder(order.order_id)"
-                class="px-4 py-2 border-2 border-orange-500 text-orange-500 font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
-                <i class="fas fa-redo"></i> Order Again
+                class="px-3 py-1.5 border-2 border-orange-500 text-orange-500 text-sm font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-1.5">
+                <i class="fas fa-redo text-xs"></i> Order Again
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Receipt View Modal -->
+    <div v-if="showReceiptModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 fade-in backdrop-blur-sm" @click.self="showReceiptModal = false">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex justify-between items-center">
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Receipt Details</h3>
+          <button @click="showReceiptModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Receipt Content -->
+        <div v-if="receiptData" class="p-6">
+          <!-- Order Info -->
+          <div class="text-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+            <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">UniCanteen</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Order Receipt</p>
+          </div>
+
+          <!-- Order Details -->
+          <div class="space-y-3 mb-6">
+            <div class="flex justify-between">
+              <span class="text-gray-600 dark:text-gray-400">Order ID:</span>
+              <span class="font-semibold text-gray-900 dark:text-white">{{ receiptData.order_id }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600 dark:text-gray-400">Date:</span>
+              <span class="font-semibold text-gray-900 dark:text-white">{{ receiptData.date }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600 dark:text-gray-400">Pickup Time:</span>
+              <span class="font-semibold text-gray-900 dark:text-white">{{ receiptData.pickup_time }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600 dark:text-gray-400">Status:</span>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{{ receiptData.status }}</span>
+            </div>
+          </div>
+
+          <!-- Items -->
+          <div class="mb-6">
+            <h5 class="font-bold text-gray-900 dark:text-white mb-3">Items Ordered</h5>
+            <div class="space-y-2">
+              <div v-for="item in receiptData.products" :key="item.product_id" class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
+                <div>
+                  <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">{{ item.pivot.quantity }} x RM {{ parseFloat(item.price).toFixed(2) }}</p>
+                </div>
+                <p class="font-semibold text-gray-900 dark:text-white">RM {{ parseFloat(item.pivot.subtotal).toFixed(2) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total -->
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+            <div class="flex justify-between items-center">
+              <span class="text-lg font-bold text-gray-900 dark:text-white">Total</span>
+              <span class="text-2xl font-bold text-orange-600 dark:text-orange-400">RM {{ parseFloat(receiptData.total).toFixed(2) }}</span>
+            </div>
+          </div>
+
+          <!-- Payment Info -->
+          <div v-if="receiptData.payment" class="text-sm text-gray-600 dark:text-gray-400 text-center space-y-1">
+            <p>Payment Method: <span class="font-semibold">{{ formatPaymentMethod(receiptData.payment.method) }}</span></p>
+            <p>Payment ID: <span class="font-mono text-xs">{{ receiptData.payment.payment_id }}</span></p>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div v-else class="p-6 text-center">
+          <i class="fas fa-spinner fa-spin text-3xl text-gray-400 mb-3"></i>
+          <p class="text-gray-500 dark:text-gray-400">Loading receipt...</p>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="sticky bottom-0 bg-gray-50 dark:bg-gray-700 p-4 flex gap-3">
+          <button @click="showReceiptModal = false" class="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-500 transition">
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -201,6 +299,7 @@ import Notification from '../components/Notification.vue'
 const orders = ref([])
 const cancelling = ref(null)
 const downloadingOrder = ref(null)
+const sendingEmail = ref(null)
 const cartStore = useCartStore()
 const router = useRouter()
 const notification = reactive({ show: false, title: '', message: '', type: 'success' })
@@ -208,6 +307,10 @@ const notification = reactive({ show: false, title: '', message: '', type: 'succ
 // Cancel confirmation modal
 const showCancelModal = ref(false)
 const orderToCancel = ref(null)
+
+// Receipt modal
+const showReceiptModal = ref(false)
+const receiptData = ref(null)
 
 // Reorder notification
 const showReorderNotification = ref(false)
@@ -319,6 +422,46 @@ const downloadReceipt = async (orderId) => {
   }
 }
 
+const viewReceipt = async (orderId) => {
+  showReceiptModal.value = true
+  receiptData.value = null
+  
+  try {
+    const order = orders.value.find(o => o.order_id === orderId)
+    if (order) {
+      receiptData.value = order
+    }
+  } catch (err) {
+    console.error('Error loading receipt:', err)
+    showNotification('Failed to load receipt', 'error')
+    showReceiptModal.value = false
+  }
+}
+
+const sendEmailReceipt = async (orderId) => {
+  sendingEmail.value = orderId
+  
+  try {
+    await axios.post(`/api/orders/${orderId}/request-receipt`)
+    showNotification('Receipt email sent successfully', 'success')
+  } catch (err) {
+    console.error('Error sending receipt email:', err)
+    showNotification('Failed to send receipt email', 'error')
+  } finally {
+    sendingEmail.value = null
+  }
+}
+const formatPaymentMethod = (method) => {
+  if (!method) return 'N/A'
+  
+  const methodMap = {
+    'card': 'Credit/Debit Card',
+    'fpx': 'FPX',
+    'grabpay': 'GrabPay'
+  }
+  
+  return methodMap[method.toLowerCase()] || method
+}
 // Polling interval for real-time updates
 let pollingInterval = null
 
