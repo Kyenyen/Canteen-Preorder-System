@@ -206,6 +206,9 @@ const placeOrder = async () => {
     return
   }
 
+  // Debug: Log the order data to verify note is included
+  console.log('Order Data:', orderData.value)
+
   // Just open the payment modal without creating the order yet
   // Order will be created after payment is successful
   showPaymentModal.value = true

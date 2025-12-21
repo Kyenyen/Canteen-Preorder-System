@@ -17,6 +17,7 @@ class Order extends Model
         'total',
         'date',
         'pickup_time',
+        'note',
         'dining_option',
     ];
 
