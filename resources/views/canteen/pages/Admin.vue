@@ -54,6 +54,7 @@
             <th class="px-6 py-4">ID</th>
             <th class="px-6 py-4">User</th>
             <th class="px-6 py-4">Items</th>
+            <th class="px-6 py-4">Note</th>
             <th @click="toggleSort('pickup_time')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
               <div class="flex items-center gap-2">
                 Pickup Time
@@ -88,6 +89,12 @@
                   {{ product.name }} <span class="text-gray-400 dark:text-gray-500">x{{ product.pivot.quantity }}</span>
                 </li>
               </ul>
+            </td>
+            <td class="px-6 py-4">
+              <span v-if="order.note" class="text-xs italic text-orange-600 dark:text-orange-400">
+                {{ order.note }}
+              </span>
+              <span v-else class="text-xs text-gray-400 dark:text-gray-500">-</span>
             </td>
             <td class="px-6 py-4">{{ order.pickup_time }}</td>
             <td class="px-6 py-4">{{ formatCurrency(order.total) }}</td>

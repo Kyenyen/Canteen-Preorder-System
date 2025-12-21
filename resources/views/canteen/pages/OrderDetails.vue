@@ -67,6 +67,14 @@
             </div>
           </div>
 
+          <!-- Order Note (if exists) -->
+          <div v-if="order.note" class="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Note</h3>
+            <div class="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-4 rounded-r-lg">
+              <p class="text-gray-700 dark:text-gray-300">{{ order.note }}</p>
+            </div>
+          </div>
+
           <!-- Payment Details -->
           <div class="mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Payment Details</h3>
