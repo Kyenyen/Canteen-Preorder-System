@@ -37,34 +37,6 @@ class ReceiptMail extends Notification
     {
         return (new MailMessage)
             ->subject('Your Order Receipt - Order #' . $this->order->order_id)
-            ->greeting('Hello ' . $this->order->user->username . ',')
-            ->line('Thank you for your order! Here is your receipt details.')
-            ->line('')
-            ->line('**Order Details:**')
-            ->line('Order ID: ' . $this->order->order_id)
-            ->line('Order Date: ' . $this->order->date)
-            ->line('Pickup Time: ' . $this->order->pickup_time)
-            ->line('Total Amount: RM ' . number_format($this->order->total, 2))
-            ->line('')
-            ->line('**Items:**')
-            ->line($this->formatOrderItems())
-            ->line('')
-            ->action('View Your Order', url('/'))
-            ->line('If you have any questions, please reply to this email.')
-            ->salutation('Best regards, UniCanteen Team');
-    }
-
-    /**
-     * Format order items for email
-     */
-    private function formatOrderItems(): string
-    {
-        $items = [];
-        foreach ($this->order->products as $product) {
-            $quantity = $product->pivot->quantity;
-            $subtotal = $product->pivot->subtotal;
-            $items[] = "- {$product->name} x{$quantity}: RM " . number_format($subtotal, 2);
-        }
-        return implode("\n", $items);
+            ->view('canteen.emails.receipt', ['order' => $this->order]);
     }
 }
