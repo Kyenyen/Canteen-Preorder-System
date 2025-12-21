@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/home-data', [HomeController::class, 'index']);
     Route::get('/orders/history', [OrderController::class, 'index']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+    Route::post('/orders/{id}/send-cancellation-email', [OrderController::class, 'sendCancellationEmail']);
 
     // Receipt Routes
     Route::get('/orders/{orderId}/receipt', [ReceiptController::class, 'viewReceipt']);

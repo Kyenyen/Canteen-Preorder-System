@@ -97,7 +97,7 @@ const cartButtonBottom = ref('1.5rem')
 
 // 3. Create the Logic Check
 const isStudent = computed(() => {
-  return auth.user && auth.user.role === 'student'
+  return auth.user && auth.user.role === 'user'
 })
 
 // Inject notification state from parent

@@ -23,7 +23,7 @@
       <div class="flex items-center gap-3" v-if="currentUser">
         
         
-        <div class="hidden md:flex gap-1 mr-2" v-if="currentUser.role === 'student'">
+        <div class="hidden md:flex gap-1 mr-2" v-if="currentUser.role === 'user'">
           <router-link to="/home" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <i class="fas fa-home mr-1"></i> Home
           </router-link>

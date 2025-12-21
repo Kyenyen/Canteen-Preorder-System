@@ -1,14 +1,13 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-    <!-- Notification Toast -->
-    <div v-if="notification.message" 
-        class="fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 z-50"
-        :class="notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'">
-      <div class="flex items-center gap-2">
-        <i :class="notification.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-        <p>{{ notification.message }}</p>
-      </div>
-    </div>
+    <!-- Notification Component -->
+    <Notification
+      :show="notification.show"
+      :type="notification.type"
+      :title="notification.title"
+      :message="notification.message"
+      @close="notification.show = false"
+    />
 
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
       <!-- Loading State -->
@@ -62,6 +61,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../../js/stores/cart'
 import axios from 'axios'
+import Notification from '../components/Notification.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -71,7 +71,7 @@ const errorMessage = ref('')
 const paymentId = ref('')
 const orderIdRef = ref('')
 const downloadingOrder = ref(false)
-const notification = reactive({ message: null, type: 'success' })
+const notification = reactive({ show: false, title: '', message: '', type: 'success' })
 
 onMounted(async () => {
   const urlParams = new URLSearchParams(window.location.search)
@@ -201,11 +201,10 @@ const downloadReceipt = async () => {
 }
 
 const showNotification = (message, type = 'success', duration = 3000) => {
+  notification.title = type === 'success' ? 'Success' : 'Error'
   notification.message = message
   notification.type = type
-  setTimeout(() => {
-    notification.message = null
-  }, duration)
+  notification.show = true
 }
 </script>
 

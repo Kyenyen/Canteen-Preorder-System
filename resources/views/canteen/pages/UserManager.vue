@@ -12,13 +12,14 @@
       </button>
     </div>
 
-    <!-- Notification -->
-    <div v-if="notification.message" 
-        class="max-w-6xl mx-auto w-full mb-4 p-4 border-l-4 rounded-lg shadow-md transition-all duration-300"
-        :class="notification.type === 'success' ? 'bg-green-100 border-green-400 text-green-700 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300' : 'bg-red-100 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300'">
-      <p class="font-bold">{{ notification.type.charAt(0).toUpperCase() + notification.type.slice(1) }}:</p>
-      <p>{{ notification.message }}</p>
-    </div>
+    <!-- Notification Component -->
+    <Notification
+      :show="notification.show"
+      :type="notification.type"
+      :title="notification.title"
+      :message="notification.message"
+      @close="notification.show = false"
+    />
 
     <!-- Users Table -->
     <div class="max-w-6xl mx-auto w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -244,6 +245,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import '@fortawesome/fontawesome-free/css/all.css'
+import Notification from '../components/Notification.vue'
 
 // State
 const users = ref([])
@@ -251,7 +253,7 @@ const showModal = ref(false)
 const isEditing = ref(false)
 const loading = ref(false)
 const modalError = ref('')
-const notification = reactive({ message: null, type: 'success' })
+const notification = reactive({ show: false, title: '', message: '', type: 'success' })
 
 const showDeleteModal = ref(false)
 const userToDelete = reactive({ id: null, name: '' })
@@ -275,11 +277,10 @@ const form = reactive({
 
 // Methods
 const showNotification = (message, type = 'success') => {
+    notification.title = type === 'success' ? 'Success' : 'Error'
     notification.message = message
     notification.type = type
-    setTimeout(() => {
-        notification.message = null
-    }, 5000)
+    notification.show = true
 }
 
 const fetchUsers = async () => {

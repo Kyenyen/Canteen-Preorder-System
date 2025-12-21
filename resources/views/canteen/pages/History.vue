@@ -1,15 +1,14 @@
 <template>
   <!-- VIEW: HISTORY (McDonald's Style) -->
   <div id="view-history" class="h-full flex-col fade-in bg-gray-100 dark:bg-gray-900 overflow-y-auto transition-colors duration-300">
-    <!-- Notification Toast -->
-    <div v-if="notification.message" 
-        class="fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 z-50"
-        :class="notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'">
-      <div class="flex items-center gap-2">
-        <i :class="notification.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-        <p>{{ notification.message }}</p>
-      </div>
-    </div>
+    <!-- Notification Component -->
+    <Notification
+      :show="notification.show"
+      :type="notification.type"
+      :title="notification.title"
+      :message="notification.message"
+      @close="notification.show = false"
+    />
 
     <!-- Reorder Notification Component -->
     <Notification 
@@ -134,21 +133,48 @@
           <!-- Footer -->
           <div class="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
             <span class="text-gray-500 dark:text-gray-400 text-sm">{{ order.pickup_time }}</span>
-            <div class="flex gap-2">
-              <button 
-                @click="downloadReceipt(order.order_id)"
-                :disabled="downloadingOrder === order.order_id"
-                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2">
-                <i :class="downloadingOrder === order.order_id ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
-                Receipt
-              </button>
-              <button 
-                @click="reorder(order.order_id)"
-                class="px-4 py-2 border-2 border-orange-500 text-orange-500 font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
-                <i class="fas fa-redo"></i> Order Again
-              </button>
+            <button 
+              @click="reorder(order.order_id)"
+              class="px-4 py-2 border-2 border-orange-500 text-orange-500 font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
+              <i class="fas fa-redo"></i> Order Again
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cancel Order Confirmation Modal -->
+    <div v-if="showCancelModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 fade-in backdrop-blur-sm">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all">
+        <div class="text-center mb-6">
+          <div class="w-16 h-16 mx-auto bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+            <i class="fas fa-exclamation-triangle text-3xl text-red-600 dark:text-red-400"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Cancel Order?</h3>
+          <p class="text-gray-600 dark:text-gray-400 mb-3">Are you sure you want to cancel order <span class="font-semibold text-gray-900 dark:text-white">#{{ orderToCancel }}</span>?</p>
+          <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-0.5"></i>
+              <p class="text-sm text-blue-800 dark:text-blue-300 text-left">Your refund will be processed within <span class="font-semibold">3 working days</span> to your original payment method.</p>
             </div>
           </div>
+          <p class="text-sm text-red-600 dark:text-red-400 mt-2">This action cannot be undone.</p>
+        </div>
+        <div class="flex gap-3">
+          <button
+            @click="showCancelModal = false"
+            class="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-semibold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          >
+            Keep Order
+          </button>
+          <button
+            @click="confirmCancelOrder"
+            :disabled="cancelling !== null"
+            class="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-xl transition disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <i v-if="cancelling !== null" class="fas fa-spinner fa-spin"></i>
+            {{ cancelling !== null ? 'Cancelling...' : 'Yes, Cancel' }}
+          </button>
         </div>
       </div>
     </div>
@@ -167,7 +193,11 @@ const cancelling = ref(null)
 const downloadingOrder = ref(null)
 const cartStore = useCartStore()
 const router = useRouter()
-const notification = reactive({ message: null, type: 'success' })
+const notification = reactive({ show: false, title: '', message: '', type: 'success' })
+
+// Cancel confirmation modal
+const showCancelModal = ref(false)
+const orderToCancel = ref(null)
 
 // Reorder notification
 const showReorderNotification = ref(false)
@@ -191,31 +221,43 @@ const fetchOrders = async () => {
   }
 }
 
-const cancelOrder = async (orderId) => {
-  if (!confirm('Are you sure you want to cancel this order?')) {
-    return
-  }
+const cancelOrder = (orderId) => {
+  orderToCancel.value = orderId
+  showCancelModal.value = true
+}
 
+const confirmCancelOrder = async () => {
+  const orderId = orderToCancel.value
   cancelling.value = orderId
+  
   try {
     await axios.put(`/api/orders/${orderId}/cancel`)
-    // Refresh orders after cancellation
+    
+    // Send cancellation email
+    try {
+      await axios.post(`/api/orders/${orderId}/send-cancellation-email`)
+      console.log('Cancellation email sent')
+    } catch (emailErr) {
+      console.error('Failed to send cancellation email:', emailErr)
+    }
+    
     await fetchOrders()
-    alert('Order cancelled successfully')
+    showCancelModal.value = false
+    orderToCancel.value = null
+    showNotification('Order cancelled successfully. A confirmation email has been sent.', 'success')
   } catch (err) {
     console.error('Failed to cancel order', err)
-    alert(err.response?.data?.message || 'Failed to cancel order')
+    showNotification(err.response?.data?.message || 'Failed to cancel order', 'error')
   } finally {
     cancelling.value = null
   }
 }
 
 const showNotification = (message, type = 'success') => {
+  notification.title = type === 'success' ? 'Success' : 'Error'
   notification.message = message
   notification.type = type
-  setTimeout(() => {
-    notification.message = null
-  }, 3000)
+  notification.show = true
 }
 
 const reorder = async (orderId) => {

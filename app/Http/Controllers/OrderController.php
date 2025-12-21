@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Notifications\CancellationMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -79,5 +80,36 @@ class OrderController extends Controller
         $order->update(['status' => $request->status]);
 
         return response()->json(['message' => 'Order status updated to ' . $request->status]);
+    }
+
+    // 6. Send Cancellation Email
+    public function sendCancellationEmail($id)
+    {
+        // Find order belonging to the logged-in user
+        $order = Order::where('order_id', $id)
+                      ->where('user_id', Auth::id())
+                      ->with(['products', 'user'])
+                      ->firstOrFail();
+
+        // Verify the order is cancelled
+        if ($order->status !== 'Cancelled') {
+            return response()->json(['message' => 'Order is not cancelled.'], 400);
+        }
+
+        try {
+            // Send cancellation email notification
+            $order->user->notify(new CancellationMail($order));
+            
+            Log::info('Cancellation email sent', ['order_id' => $order->order_id]);
+            
+            return response()->json(['message' => 'Cancellation email sent successfully']);
+        } catch (\Exception $e) {
+            Log::error('Failed to send cancellation email', [
+                'order_id' => $order->order_id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json(['message' => 'Failed to send cancellation email'], 500);
+        }
     }
 }
