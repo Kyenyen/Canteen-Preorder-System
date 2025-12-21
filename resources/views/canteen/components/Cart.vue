@@ -11,7 +11,7 @@
       :class="['w-full md:w-[400px] bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col h-full shadow-2xl z-[110] fixed top-0 right-0 transform transition-transform duration-300', isOpen ? 'translate-x-0' : 'translate-x-full']"
     >
       <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800">
-        <h3 class="font-extrabold text-2xl text-gray-800 dark:text-white">My Tray</h3>
+        <h3 class="font-extrabold text-2xl text-gray-800 dark:text-white">Shopping Cart</h3>
         <div class="flex items-center gap-3">
            <button
             v-if="false" 

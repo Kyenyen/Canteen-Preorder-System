@@ -59,8 +59,8 @@
             </div>
 
             <!-- Action Footer -->
-            <button @click="addToTray" class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 text-lg flex items-center justify-center gap-3">
-                <span>Add to Tray - RM {{ formatPrice(totalPrice) }}</span>
+            <button @click="addToCart" class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 text-lg flex items-center justify-center gap-3">
+                <span>Add to Cart - RM {{ formatPrice(totalPrice) }}</span>
             </button>
         </div>
     </div>
@@ -75,7 +75,7 @@ const props = defineProps({
     product: Object // Expected format: { id, name, price, description, category, icon, bgColor?, textColor? }
 })
 
-const emit = defineEmits(['close', 'add-to-tray'])
+const emit = defineEmits(['close', 'add-to-cart'])
 
 const quantity = ref(1)
 
@@ -103,8 +103,8 @@ const closeModal = () => {
     emit('close')
 }
 
-const addToTray = () => {
-    emit('add-to-tray', {
+const addToCart = () => {
+    emit('add-to-cart', {
         product: props.product,
         quantity: quantity.value,
         totalPrice: totalPrice.value

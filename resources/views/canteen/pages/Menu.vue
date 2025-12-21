@@ -132,13 +132,13 @@
       :isOpen="isProductModalOpen"
       :product="selectedProduct"
       @close="closeProductDetails"
-      @add-to-tray="handleAddFromModal"
+      @add-to-cart="handleAddFromModal"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useCartStore } from '../../../js/stores/cart'
 import axios from 'axios'
 import Notification from '../components/Notification.vue'
@@ -166,7 +166,24 @@ const fetchMenu = async () => {
   }
 }
 
-onMounted(fetchMenu)
+// Polling interval for real-time updates
+let pollingInterval = null
+
+onMounted(() => {
+  fetchMenu()
+  
+  // Start polling for menu updates every 5 seconds
+  pollingInterval = setInterval(() => {
+    fetchMenu()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  // Clear polling when component is unmounted
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+  }
+})
 
 // Dynamic Categories Calculation
 const categories = computed(() => {
@@ -300,10 +317,26 @@ const showNotification = (type, title, message = '') => {
 }
 
 const addToCart = async (item) => {
+  // Optimistic update - add to cart immediately for instant UI response
+  const productId = item.product_id || item.id
+  cartStore.items.push({
+    id: productId,
+    name: item.name,
+    price: item.price,
+    qty: 1,
+    photo: item.photo
+  })
+  
+  // Then make API call in background
   try {
     await cartStore.addItem(item, 1)
     showNotification('success', 'Added to cart!', `${item.name} added successfully`)
   } catch (error) {
+    // Remove from cart on error
+    const index = cartStore.items.findIndex(i => i.id === productId)
+    if (index !== -1) {
+      cartStore.items.splice(index, 1)
+    }
     console.error('Failed to add item to cart:', error)
     const errorMsg = error.response?.data?.message || 'Failed to add item to cart'
     showNotification('error', 'Error', errorMsg)
