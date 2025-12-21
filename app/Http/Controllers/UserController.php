@@ -37,7 +37,7 @@ class UserController extends Controller
             $validated = $request->validate([
                 'username' => 'required|string|unique:users|max:255',
                 'email' => 'required|email|unique:users|max:255',
-                'role' => 'required|in:student,admin',
+                'role' => 'required|in:user,admin',
                 'password' => 'required|string|min:6',
             ]);
 
@@ -87,7 +87,7 @@ class UserController extends Controller
                     Rule::unique('users')->ignore($user->user_id, 'user_id'),
                     'max:255'
                 ],
-                'role' => 'required|in:student,admin',
+                'role' => 'required|in:user,admin',
                 'password' => 'nullable|string|min:6',
             ]);
 
