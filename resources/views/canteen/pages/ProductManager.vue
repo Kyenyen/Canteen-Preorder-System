@@ -2,14 +2,27 @@
   <div class="min-h-screen w-full flex flex-col fade-in p-6 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
     
     <!-- Header -->
-    <div class="max-w-6xl mx-auto w-full mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Menu Management</h1>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">Add, edit, or remove items from the canteen menu.</p>
+    <div class="max-w-6xl mx-auto w-full mb-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-800 dark:text-white">Menu Management</h1>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">Add, edit, or remove items from the canteen menu.</p>
+        </div>
+        <button @click="openModal()" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg transition transform active:scale-95 flex items-center gap-2 font-bold" :disabled="loadingCategories">
+          <i class="fas fa-plus"></i> Add New Item
+        </button>
       </div>
-      <button @click="openModal()" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg transition transform active:scale-95 flex items-center gap-2 font-bold" :disabled="loadingCategories">
-        <i class="fas fa-plus"></i> Add New Item
-      </button>
+      
+      <!-- Search Bar -->
+      <div class="relative">
+        <input 
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search by name, category, or price..."
+          class="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none transition-colors"
+        >
+        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+      </div>
     </div>
 
     <!-- Global Notification (Success/General info only) -->
@@ -241,6 +254,7 @@ const previewUrl = ref(null)
 const selectedFile = ref(null)
 const sortBy = ref('name')
 const sortOrder = ref('asc')
+const searchQuery = ref('')
 
 const toggleSort = (column) => {
   if (sortBy.value === column) {
@@ -252,7 +266,28 @@ const toggleSort = (column) => {
 }
 
 const sortedProducts = computed(() => {
-  return [...products.value].sort((a, b) => {
+  let filtered = products.value
+  
+  // Filter by search query
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(product => {
+      const name = product.name?.toLowerCase() || ''
+      const category = typeof product.category === 'object' ? 
+                      (product.category?.name?.toLowerCase() || '') : 
+                      (product.category?.toLowerCase() || '')
+      const price = product.price?.toString() || ''
+      const description = product.description?.toLowerCase() || ''
+      
+      return name.includes(query) || 
+             category.includes(query) || 
+             price.includes(query) ||
+             description.includes(query)
+    })
+  }
+  
+  // Sort
+  return [...filtered].sort((a, b) => {
     let aVal, bVal
     
     if (sortBy.value === 'category') {

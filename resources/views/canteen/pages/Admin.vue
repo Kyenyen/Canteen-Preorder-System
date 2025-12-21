@@ -16,19 +16,33 @@
         </div>
       </div>
       
-      <!-- Status Filter -->
-      <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Filter:</label>
-        <select 
-          v-model="selectedStatus" 
-          class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none transition-colors"
-        >
-          <option value="All">All Orders</option>
-          <option value="Preparing">Preparing</option>
-          <option value="Ready">Ready</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
+      <!-- Search and Filter -->
+      <div class="flex items-center gap-3">
+        <!-- Search -->
+        <div class="relative">
+          <input 
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search orders..."
+            class="pl-10 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none transition-colors w-64"
+          >
+          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+        </div>
+        
+        <!-- Status Filter -->
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Status:</label>
+          <select 
+            v-model="selectedStatus" 
+            class="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 outline-none transition-colors"
+          >
+            <option value="All">All</option>
+            <option value="Preparing">Preparing</option>
+            <option value="Ready">Ready</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -115,7 +129,8 @@
       <!-- Empty State -->
       <div v-if="filteredOrders.length === 0" class="text-center py-10 text-gray-400 dark:text-gray-500">
         <i class="fas fa-clipboard-list text-4xl mb-3 opacity-50"></i>
-        <p>No orders found for the selected status.</p>
+        <p v-if="searchQuery.trim() || selectedStatus !== 'All'">No orders found matching your filters.</p>
+        <p v-else>No orders found.</p>
       </div>
     </div>
     
@@ -130,6 +145,7 @@ const orders = ref([])
 const selectedStatus = ref('All')
 const sortBy = ref('date')
 const sortOrder = ref('desc')
+const searchQuery = ref('')
 
 const toggleSort = (column) => {
   if (sortBy.value === column) {
@@ -146,6 +162,22 @@ const filteredOrders = computed(() => {
   // Filter by status
   if (selectedStatus.value !== 'All') {
     filtered = filtered.filter(order => order.status === selectedStatus.value)
+  }
+  
+  // Filter by search query
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(order => {
+      const orderId = order.order_id.toLowerCase()
+      const username = order.user?.username?.toLowerCase() || ''
+      const items = order.products?.map(p => p.name.toLowerCase()).join(' ') || ''
+      const pickupTime = order.pickup_time?.toLowerCase() || ''
+      
+      return orderId.includes(query) || 
+             username.includes(query) || 
+             items.includes(query) ||
+             pickupTime.includes(query)
+    })
   }
   
   // Sort
