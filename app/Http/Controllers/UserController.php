@@ -41,8 +41,13 @@ class UserController extends Controller
                 'password' => 'required|string|min:6',
             ]);
 
+            // Generate a 5-character user ID
+            do {
+                $userId = strtoupper(substr(str_replace('-', '', Str::uuid()), 0, 5));
+            } while (User::where('user_id', $userId)->exists());
+
             $user = User::create([
-                'user_id' => (string) Str::uuid(),
+                'user_id' => $userId,
                 'username' => $validated['username'],
                 'email' => $validated['email'],
                 'role' => $validated['role'],
