@@ -14,9 +14,9 @@ class HomeController extends Controller
         $user = $request->user();
         $data = [];
 
-        // 1. Get Active Order (If Student)
+        // 1. Get Active Order (If User/Student - not admin)
         // Checks for any order that isn't 'Completed' or 'Cancelled'
-        if ($user->role === 'student') {
+        if ($user->role !== 'admin') {
             $activeOrder = Order::where('user_id', $user->user_id) 
                 ->whereIn('status', ['Pending', 'Preparing', 'Ready'])
                 // Assuming your Order model uses 'date' or timestamps. 

@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../../js/stores/auth'
@@ -128,6 +128,7 @@ const promo = ref({
   description: "Please wait while we fetch the latest deals."
 })
 const popularItems = ref([])
+let pollingInterval = null
 
 const goToMenu = () => {
     if (isAdmin.value) {
@@ -141,9 +142,15 @@ const fetchHomeData = async () => {
   try {
     const response = await axios.get('/api/home-data')
     
-    // 1. Update Active Order (Only if returned)
+    console.log('Home data received:', response.data)
+    
+    // 1. Update Active Order (clear if not returned)
     if (response.data.activeOrder) {
         activeOrder.value = response.data.activeOrder
+        console.log('Active order set:', activeOrder.value)
+    } else {
+        activeOrder.value = null
+        console.log('No active order')
     }
 
     // 2. Update Popular Items
@@ -166,7 +173,23 @@ const fetchHomeData = async () => {
   }
 }
 
-onMounted(fetchHomeData)
+onMounted(() => {
+  fetchHomeData()
+  
+  // Poll for active order updates every 5 seconds (only for non-admin users)
+  if (!isAdmin.value) {
+    pollingInterval = setInterval(() => {
+      fetchHomeData()
+    }, 5000)
+  }
+})
+
+onUnmounted(() => {
+  // Clear polling interval when component is unmounted
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+  }
+})
 </script>
 
 <style scoped>

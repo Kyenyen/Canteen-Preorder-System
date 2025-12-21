@@ -133,11 +133,21 @@
           <!-- Footer -->
           <div class="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
             <span class="text-gray-500 dark:text-gray-400 text-sm">{{ order.pickup_time }}</span>
-            <button 
-              @click="reorder(order.order_id)"
-              class="px-4 py-2 border-2 border-orange-500 text-orange-500 font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
-              <i class="fas fa-redo"></i> Order Again
-            </button>
+            <div class="flex gap-2">
+              <button 
+                v-if="order.status === 'Completed'"
+                @click="downloadReceipt(order.order_id)"
+                :disabled="downloadingOrder === order.order_id"
+                class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2">
+                <i :class="downloadingOrder === order.order_id ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+                Receipt
+              </button>
+              <button 
+                @click="reorder(order.order_id)"
+                class="px-4 py-2 border-2 border-orange-500 text-orange-500 font-semibold rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
+                <i class="fas fa-redo"></i> Order Again
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -182,7 +192,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import axios from 'axios'
 import { useCartStore } from '../../../js/stores/cart'
 import { useRouter } from 'vue-router'
@@ -309,7 +319,24 @@ const downloadReceipt = async (orderId) => {
   }
 }
 
-onMounted(fetchOrders)
+// Polling interval for real-time updates
+let pollingInterval = null
+
+onMounted(() => {
+  fetchOrders()
+  
+  // Poll for order updates every 5 seconds
+  pollingInterval = setInterval(() => {
+    fetchOrders()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  // Clear polling interval when component is unmounted
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+  }
+})
 </script>
 
 <style scoped>
