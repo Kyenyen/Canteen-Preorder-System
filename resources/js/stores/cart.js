@@ -32,18 +32,48 @@ export const useCartStore = defineStore('cart', () => {
     }
 
     async function addItem(product, quantity = 1) {
+        const productId = product.product_id || product.id;
+        
+        // Optimistic update - add to cart immediately
+        const existingIndex = items.value.findIndex(i => i.id === productId);
+        if (existingIndex !== -1) {
+            // Update quantity if exists
+            items.value[existingIndex].qty += quantity;
+        } else {
+            // Add new item
+            items.value.push({
+                id: productId,
+                name: product.name,
+                price: product.price,
+                qty: quantity,
+                photo: product.photo
+            });
+        }
+        
         try {
             await ensureCsrfCookie();
-            const productId = product.product_id || product.id;
             console.log('Adding to cart:', productId, quantity);
             await axios.post('/api/cart', {
                 product_id: productId,
                 quantity: quantity
             });
-            await fetchCart(); // Refresh cart from server
+            // Sync with server to ensure consistency
+            await fetchCart();
             console.log('Item added, cart now has:', items.value.length, 'items');
             return true;
         } catch (error) {
+            // Revert optimistic update on error
+            if (existingIndex !== -1) {
+                items.value[existingIndex].qty -= quantity;
+                if (items.value[existingIndex].qty <= 0) {
+                    items.value.splice(existingIndex, 1);
+                }
+            } else {
+                const index = items.value.findIndex(i => i.id === productId);
+                if (index !== -1) {
+                    items.value.splice(index, 1);
+                }
+            }
             console.error('Error adding to cart:', error);
             console.error('Error details:', error.response?.data);
             throw error;

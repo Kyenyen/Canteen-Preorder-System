@@ -118,15 +118,6 @@
       </div>
     </div>
 
-    <!-- Notification Component -->
-    <Notification
-      :show="notification.show"
-      :type="notification.type"
-      :title="notification.title"
-      :message="notification.message"
-      @close="notification.show = false"
-    />
-
     <!-- Product Details Modal -->
     <ProductModal
       :isOpen="isProductModalOpen"
@@ -141,7 +132,6 @@
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import { useCartStore } from '../../../js/stores/cart'
 import axios from 'axios'
-import Notification from '../components/Notification.vue'
 import ProductModal from '../components/Product-modal.vue'
 
 const currentCategory = ref('All')
@@ -317,26 +307,10 @@ const showNotification = (type, title, message = '') => {
 }
 
 const addToCart = async (item) => {
-  // Optimistic update - add to cart immediately for instant UI response
-  const productId = item.product_id || item.id
-  cartStore.items.push({
-    id: productId,
-    name: item.name,
-    price: item.price,
-    qty: 1,
-    photo: item.photo
-  })
-  
-  // Then make API call in background
   try {
     await cartStore.addItem(item, 1)
     showNotification('success', 'Added to cart!', `${item.name} added successfully`)
   } catch (error) {
-    // Remove from cart on error
-    const index = cartStore.items.findIndex(i => i.id === productId)
-    if (index !== -1) {
-      cartStore.items.splice(index, 1)
-    }
     console.error('Failed to add item to cart:', error)
     const errorMsg = error.response?.data?.message || 'Failed to add item to cart'
     showNotification('error', 'Error', errorMsg)
