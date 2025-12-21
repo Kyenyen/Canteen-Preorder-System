@@ -8,11 +8,11 @@
     <div class="flex justify-between items-center mb-8 shrink-0">
       <div class="flex items-center gap-4">
         <div class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-orange-600 dark:text-orange-400 transition-colors duration-300">
-          <i class="fas fa-fire-burner text-2xl"></i>
+          <i class="fas fa-box-archive text-2xl"></i>
         </div>
         <div>
-          <h2 class="text-2xl font-bold text-gray-800 dark:text-white transition-colors duration-300">Kitchen Dashboard</h2>
-          <p class="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">Manage incoming orders</p>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white transition-colors duration-300">Order Management</h2>
+          <p class="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">Track and manage all customer orders</p>
         </div>
       </div>
     </div>

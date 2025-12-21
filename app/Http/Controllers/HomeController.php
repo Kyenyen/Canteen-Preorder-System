@@ -45,14 +45,28 @@ class HomeController extends Controller
             ];
         }
 
-        // 3. Popular Items: Pick 3 random items (Excluding the promo item to avoid duplicates)
-        $query = Product::where('is_available', 1);
+        // 3. Popular Items: Top 3 best-selling products based on order data
+        $popularProducts = Product::select('products.*')
+            ->selectRaw('SUM(orderlist.quantity) as total_sold')
+            ->join('orderlist', 'products.product_id', '=', 'orderlist.product_id')
+            ->join('orders', 'orderlist.order_id', '=', 'orders.order_id')
+            ->where('products.is_available', 1)
+            ->whereIn('orders.status', ['Completed', 'Preparing', 'Ready']) // Count orders that are not cancelled
+            ->groupBy('products.product_id', 'products.name', 'products.description', 'products.price', 'products.category_id', 'products.photo', 'products.is_available')
+            ->orderByDesc('total_sold')
+            ->limit(3)
+            ->get();
 
-        if ($promoProduct) {
-            $query->where('product_id', '!=', $promoProduct->product_id);
+        // If no popular products exist (no orders yet), fallback to random products
+        if ($popularProducts->isEmpty()) {
+            $query = Product::where('is_available', 1);
+            if ($promoProduct) {
+                $query->where('product_id', '!=', $promoProduct->product_id);
+            }
+            $popularProducts = $query->inRandomOrder()->limit(3)->get();
         }
 
-        $data['popularItems'] = $query->inRandomOrder()->limit(3)->get();
+        $data['popularItems'] = $popularProducts;
 
         return response()->json($data);
     }

@@ -142,15 +142,11 @@ const fetchHomeData = async () => {
   try {
     const response = await axios.get('/api/home-data')
     
-    console.log('Home data received:', response.data)
-    
     // 1. Update Active Order (clear if not returned)
     if (response.data.activeOrder) {
         activeOrder.value = response.data.activeOrder
-        console.log('Active order set:', activeOrder.value)
     } else {
         activeOrder.value = null
-        console.log('No active order')
     }
 
     // 2. Update Popular Items
