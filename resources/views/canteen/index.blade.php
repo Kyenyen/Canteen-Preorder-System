@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Canteen Preorder System</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-gray-100">
     <div id="app"></div>

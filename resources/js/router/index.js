@@ -111,15 +111,13 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    // 1. Update the Tab Title dynamically
     const appName = 'UniCanteen';
-    // If the route has a title, format it as "UniCanteen | PageName", otherwise just "UniCanteen"
     document.title = to.meta.title ? `${appName} | ${to.meta.title}` : appName;
 
     // 2. Existing Auth Logic
     const authStore = useAuthStore()
     const isAuthenticated = !!authStore.token
-    const userRole = authStore.user ? authStore.user.role : null // Extracted user role
+    const userRole = authStore.user ? authStore.user.role : null 
 
     if (isAuthenticated && to.meta.guest) {
         if (userRole === 'admin') {
@@ -136,7 +134,7 @@ router.beforeEach((to, from, next) => {
     // 3. Role-based check: Deny access if a route requires a role (e.g., 'admin') that the user does not have.
     if (to.meta.role && to.meta.role !== userRole) {
         console.warn(`Access denied: User role (${userRole}) cannot access route requiring (${to.meta.role})`)
-        return next('/home') // Redirect unauthorized users to home
+        return next('/home') 
     }
 
     next()

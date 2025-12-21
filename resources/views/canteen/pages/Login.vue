@@ -54,6 +54,10 @@
           </div>
         </div>
 
+        <div class="mb-4 flex justify-center">
+          <div id="recaptcha-container"></div>
+        </div>
+
         <button type="submit" :disabled="loading" class="w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 text-lg flex justify-center items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
           <i v-if="loading" class="fas fa-spinner fa-spin"></i>
           <span>{{ loading ? 'Signing In...' : 'Sign In' }}</span>
@@ -70,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../../../js/stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -79,9 +83,28 @@ const password = ref('')
 const showPassword = ref(false)
 const errorMessage = ref('')
 const loading = ref(false)
+const captchaToken = ref(null)
 
 const authStore = useAuthStore()
 const router = useRouter()
+
+onMounted(() => {
+  const checkGrecaptcha = setInterval(() => {
+    if (window.grecaptcha) {
+      window.grecaptcha.render('recaptcha-container', {
+        'sitekey': '6LctkzIsAAAAAJupz9sg4Ar45Azj6cb5Pdv4vg2n', 
+        'callback': (token) => {
+          captchaToken.value = token
+          errorMessage.value = ''
+        },
+        'expired-callback': () => {
+          captchaToken.value = null
+        }
+      });
+      clearInterval(checkGrecaptcha);
+    }
+  }, 500);
+});
 
 const togglePassword = () => {
   showPassword.value = !showPassword.value
@@ -89,12 +112,21 @@ const togglePassword = () => {
 
 const handleLogin = async () => {
   errorMessage.value = ''
+
+  if (!captchaToken.value) {
+    errorMessage.value = 'Please complete the Captcha verification.'
+    return
+  }
+
   loading.value = true
 
   try {
-    await authStore.login(email.value, password.value)
+    await authStore.login({
+      email: email.value,
+      password: password.value,
+      'g-recaptcha-response': captchaToken.value 
+    })
     
-    // Redirect based on role (Admin vs User)
     if (authStore.user?.role === 'admin') {
         router.push('/admin')
     } else {
@@ -102,8 +134,10 @@ const handleLogin = async () => {
     }
 
   } catch (err) {
+    if (window.grecaptcha) window.grecaptcha.reset()
+    captchaToken.value = null
+  
     if (err.response && err.response.data && err.response.data.errors) {
-      // Join multiple errors with a newline for cleaner display
       errorMessage.value = Object.values(err.response.data.errors).flat().join('\n')
     } else if (err.response && err.response.data && err.response.data.message) {
       errorMessage.value = err.response.data.message

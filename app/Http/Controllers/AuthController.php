@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -29,6 +30,7 @@ class AuthController extends Controller
                 'regex:/@(student\.tarc\.edu\.my|tarc\.edu\.my)$/i'
             ],
             'password' => 'required|string|min:6|confirmed',
+            'g-recaptcha-response' => 'required',
         ], [
             'username.required' => 'Please enter a username.',
             'username.max' => 'Username cannot exceed 100 characters.',
@@ -39,7 +41,15 @@ class AuthController extends Controller
             'password.required' => 'A password is required.',
             'password.min' => 'Password must be at least 6 characters.',
             'password.confirmed' => 'The password confirmation does not match.',
+            'g-recaptcha-response.required' => 'Please complete the Captcha verification.',
+            'g-recaptcha-response.recaptcha' => 'Captcha verification failed.',
         ]);
+
+        if (!$this->verifyCaptcha($request->input('g-recaptcha-response'))) {
+            throw ValidationException::withMessages([
+                'g-recaptcha-response' => ['Captcha verification failed. Please try again.'],
+            ]);
+        }
 
         $role = 'user';
 
@@ -70,12 +80,22 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required|string'
+            'password' => 'required|string',
+            'g-recaptcha-response' => 'required',
+
         ], [
             'email.required' => 'Please enter your email address.',
             'email.email' => 'Please enter a valid email format.',
             'password.required' => 'Please enter your password.',
+            'g-recaptcha-response.required' => 'Please complete the Captcha verification.',
+            'g-recaptcha-response.recaptcha' => 'Captcha verification failed.',
         ]);
+
+        if (!$this->verifyCaptcha($request->input('g-recaptcha-response'))) {
+            throw ValidationException::withMessages([
+                'g-recaptcha-response' => ['Captcha verification failed.'],
+            ]);
+        }
 
         if (!Auth::attempt($request->only('email', 'password'))) {
             throw ValidationException::withMessages([
@@ -87,6 +107,21 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
         return response()->json(['token' => $token, 'user' => $user]);
     }
+
+    private function verifyCaptcha($token)
+    {
+        if (app()->environment('testing')) {
+            return true;
+        }
+
+        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret' => env('RECAPTCHA_SECRET_KEY'),
+            'response' => $token,
+        ]);
+
+        return $response->json('success') === true;
+    }
+
 
     public function sendResetLinkEmail(Request $request)
     {

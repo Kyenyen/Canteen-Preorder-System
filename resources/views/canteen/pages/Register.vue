@@ -74,6 +74,10 @@
           >
         </div>
 
+        <div class="mb-4 flex justify-center">
+          <div id="recaptcha-container"></div>
+        </div>
+
         <button type="submit" :disabled="loading || !!successMessage" class="w-full bg-gray-900 dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 mt-2 disabled:opacity-50 disabled:cursor-not-allowed">
           <span v-if="loading"><i class="fas fa-spinner fa-spin mr-2"></i>Registering...</span>
           <span v-else>Register</span>
@@ -90,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue' 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../../js/stores/auth'
 
@@ -102,6 +106,7 @@ const password_confirmation = ref('')
 const errorMessage = ref('')
 const successMessage = ref('') 
 const loading = ref(false)
+const captchaToken = ref(null) 
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -127,13 +132,38 @@ const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
+onMounted(() => {
+  const checkGrecaptcha = setInterval(() => {
+    if (window.grecaptcha) {
+      window.grecaptcha.render('recaptcha-container', {
+        'sitekey': '6LctkzIsAAAAAJupz9sg4Ar45Azj6cb5Pdv4vg2n', 
+        'callback': (token) => {
+          captchaToken.value = token
+          errorMessage.value = ''
+        },
+        'expired-callback': () => {
+          captchaToken.value = null
+        }
+      });
+      clearInterval(checkGrecaptcha);
+    }
+  }, 500);
+});
+
 const handleRegister = async () => {
   errorMessage.value = ''
   successMessage.value = ''
+
+  if (!captchaToken.value) {
+    errorMessage.value = 'Please complete the CAPTCHA verification.'
+    return
+  }
+
   if (passwordStrength.value.score < 2) {
     errorMessage.value = 'Please use a stronger password.'
     return
   }
+  
   loading.value = true
 
   try {
@@ -141,25 +171,21 @@ const handleRegister = async () => {
       username: username.value,
       email: email.value,
       password: password.value,
-      password_confirmation: password_confirmation.value
+      password_confirmation: password_confirmation.value,
+      'g-recaptcha-response': captchaToken.value 
     })
     
-    // Show success message
     successMessage.value = 'Registration successful! Redirecting to login...'
-    
-    // Wait 2 seconds so user can read message, then redirect
-    setTimeout(() => {
-        router.push('/') 
-    }, 2000)
+    setTimeout(() => { router.push('/') }, 2000)
 
   } catch (err) {
-    console.log(err.response?.data)
+    if (window.grecaptcha) window.grecaptcha.reset()
+    captchaToken.value = null
+
     if (err.response && err.response.data && err.response.data.errors) {
       errorMessage.value = Object.values(err.response.data.errors).flat().join('\n')
-    } else if (err.response && err.response.data && err.response.data.message) {
-      errorMessage.value = err.response.data.message
     } else {
-      errorMessage.value = 'Registration failed. Please try again.'
+      errorMessage.value = err.response?.data?.message || 'Registration failed.'
     }
     loading.value = false 
   }

@@ -20,6 +20,8 @@
         "@stripe/stripe-js": "^8.6.0",
         "chart.js": "^4.5.1",
         "pinia": "^3.0.4",
-        "vue-router": "^4.6.3"
+        "vue-recaptcha": "^3.0.0-alpha.6",
+        "vue-router": "^4.6.3",
+        "vue3-google-signin": "^2.1.1"
     }
 }
