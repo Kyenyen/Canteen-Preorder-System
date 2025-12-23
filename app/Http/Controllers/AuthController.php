@@ -14,6 +14,9 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail; 
+use App\Mail\OtpMail;
 
 class AuthController extends Controller
 {
@@ -27,21 +30,25 @@ class AuthController extends Controller
                 'string',
                 'email',
                 'max:100',
-                'unique:users',
+                'unique:users', // Double check just in case
                 'regex:/@(student\.tarc\.edu\.my|tarc\.edu\.my)$/i'
             ],
             'password' => 'required|string|min:6|confirmed',
             'g-recaptcha-response' => 'required',
         ], [
-            'username.required' => 'Please enter a username.',
+            'username.required' => 'Please choose a username for your account.',
             'username.max' => 'Username cannot exceed 100 characters.',
-            'email.required' => 'An email address is required.',
-            'email.email' => 'Please enter a valid email format.',
-            'email.unique' => 'This email is already registered.',
-            'email.regex' => 'You must use a valid TARC email (@student.tarc.edu.my or @tarc.edu.my).',
-            'password.required' => 'A password is required.',
+            
+            // Context-aware: If email is missing here, it means they didn't verify properly
+            'email.required' => 'Please verify your TARC email address first.',
+            'email.email' => 'The email format is invalid.',
+            'email.unique' => 'Account already exists. Please go to Login.',
+            'email.regex' => 'Registration is restricted to TARC emails only.',
+            
+            'password.required' => 'Please set a secure password.',
             'password.min' => 'Password must be at least 6 characters.',
             'password.confirmed' => 'The password confirmation does not match.',
+            
             'g-recaptcha-response.required' => 'Please complete the Captcha verification.',
             'g-recaptcha-response.recaptcha' => 'Captcha verification failed.',
         ]);
@@ -76,6 +83,49 @@ class AuthController extends Controller
         return response()->json(['token' => $token, 'user' => $user]);
     }
 
+    public function sendOtp(Request $request) {
+        $request->validate(['email' => 'required|email']);
+
+        $request->validate([
+            'email' => [
+                'required', 
+                'email', 
+                'unique:users', 
+                'regex:/@(student\.tarc\.edu\.my|tarc\.edu\.my)$/i'
+            ]
+        ], [
+            'email.required' => 'Please enter your student email address.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.unique' => 'This email is already registered. Please log in instead.',
+            'email.regex' => 'Registration is restricted to TARC emails only (@student.tarc.edu.my).',
+        ]);
+        
+        $otp = rand(100000, 999999);
+        
+        Cache::put('otp_' . $request->email, $otp, 60);
+        Mail::to($request->email)->send(new OtpMail($otp));
+        
+        return response()->json(['message' => 'OTP sent']);
+    }
+
+    public function verifyOtp(Request $request) {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|digits:6'
+        ], [
+            'otp.required' => 'Please enter the 6-digit code.',
+            'otp.digits' => 'The verification code must be exactly 6 digits.'
+        ]);
+
+        $cachedOtp = Cache::get('otp_'.$request->email);
+        
+        if (!$cachedOtp || $cachedOtp != $request->otp) {
+            return response()->json(['message' => 'Invalid OTP'], 400);
+        }
+        
+        return response()->json(['message' => 'Verified']);
+    }
+
     // 2. Login with Custom Messages
     public function login(Request $request)
     {
@@ -107,7 +157,7 @@ class AuthController extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

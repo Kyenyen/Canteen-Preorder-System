@@ -2,25 +2,21 @@
   <div class="min-h-screen w-full flex flex-col items-center justify-center fade-in p-4 bg-orange-500 dark:bg-gray-900 transition-colors duration-500">
     <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md transition-colors duration-300">
       
-      <!-- Title -->
       <div class="text-center mb-6">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
         <p class="text-gray-500 dark:text-gray-400 text-sm">Join UniCanteen today</p>
       </div>
 
-      <!-- Success Message (NEW) -->
       <div v-if="successMessage" class="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-300 text-sm rounded-lg flex items-center gap-2 animate-bounce">
         <i class="fas fa-check-circle"></i>
         <span class="font-bold">{{ successMessage }}</span>
       </div>
 
-      <!-- Error Message -->
       <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 text-sm rounded-lg flex items-start gap-2 animate-pulse whitespace-pre-line text-left">
         <i class="fas fa-exclamation-circle mt-0.5"></i>
         <span>{{ errorMessage }}</span>
       </div>
 
-      <!-- Register Form -->
       <form @submit.prevent="handleRegister" class="space-y-4" novalidate>
         <div>
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Username</label>
@@ -29,7 +25,61 @@
 
         <div>
           <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">TARC Email</label>
-          <input type="email" v-model="email" placeholder="@student.tarc.edu.my / @tarc.edu.my" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition bg-gray-50 dark:bg-gray-700 dark:text-white" :disabled="!!successMessage">
+          
+          <div class="flex gap-2">
+            <div class="relative w-full">
+              <input 
+                type="email" 
+                v-model="email" 
+                placeholder="@student.tarc.edu.my" 
+                class="w-full p-3 border rounded-xl outline-none transition disabled:opacity-70 disabled:cursor-not-allowed"
+                :class="emailVerified 
+                  ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 pr-10' 
+                  : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500'" 
+                :disabled="emailVerified || (otpSent && timer > 0) || !!successMessage"
+              >
+              
+              <div v-if="emailVerified" class="absolute right-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400 animate-bounce">
+                <i class="fas fa-check-circle text-xl"></i>
+              </div>
+            </div>
+
+            <button 
+              v-if="!emailVerified"
+              type="button" 
+              @click="sendOtp" 
+              :disabled="!isValidEmail || loadingOtp || timer > 0"
+              class="px-4 py-3 rounded-xl font-bold text-sm transition-all whitespace-nowrap min-w-[100px]"
+              :class="(timer > 0 || !isValidEmail || loadingOtp)
+                ? 'bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400' 
+                : 'bg-orange-600 hover:bg-orange-700 text-white shadow-md active:scale-95'"
+            >
+              <span v-if="loadingOtp"><i class="fas fa-spinner fa-spin"></i></span>
+              <span v-else-if="timer > 0">{{ timer }}s</span>
+              <span v-else-if="otpSent">Resend</span>
+              <span v-else>Verify</span>
+            </button>
+          </div>
+
+          <div v-if="otpSent && !emailVerified" class="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 animate-fadeIn">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">We have sent a 6-digit OTP to your email. It will expire in 60 seconds.</p>
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                v-model="otpInput" 
+                placeholder="Enter Code" 
+                class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center tracking-widest font-bold uppercase focus:ring-2 focus:ring-orange-500 outline-none dark:bg-gray-800 dark:text-white"
+                maxlength="6"
+              >
+              <button 
+                type="button" 
+                @click="verifyOtp" 
+                class="bg-gray-900 dark:bg-gray-600 text-white px-4 rounded-lg font-bold text-sm hover:bg-gray-800 dark:hover:bg-gray-500 transition"
+              >
+                Confirm
+              </button>
+            </div>
+            </div>
         </div>
 
         <div class="relative">
@@ -94,9 +144,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue' 
+import { ref, computed, onMounted, watch } from 'vue' 
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../../js/stores/auth'
+import axios from 'axios'
 
 const username = ref('')
 const email = ref('')
@@ -108,8 +159,25 @@ const successMessage = ref('')
 const loading = ref(false)
 const captchaToken = ref(null) 
 
+const otpInput = ref('')
+const otpSent = ref(false)
+const emailVerified = ref(false)
+const timer = ref(0)
+const loadingOtp = ref(false)
+let timerInterval = null
+
 const router = useRouter()
 const authStore = useAuthStore()
+
+watch(email, () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+  if (emailVerified.value) {
+    emailVerified.value = false
+    otpSent.value = false
+    otpInput.value = ''
+  }
+})
 
 const passwordStrength = computed(() => {
   const p = password.value
@@ -150,10 +218,80 @@ onMounted(() => {
   }, 500);
 });
 
+const isValidEmail = computed(() => {
+  return /@student\.tarc\.edu\.my$|@tarc\.edu\.my$/i.test(email.value)
+})
+
+const sendOtp = async () => {
+  if (!isValidEmail.value) {
+    errorMessage.value = "Invalid TARC email format."
+    return
+  }
+  
+  loadingOtp.value = true
+  errorMessage.value = ''
+
+  try {
+    await axios.post('/api/send-otp', { email: email.value })
+    
+    otpSent.value = true
+    startTimer(60) 
+    successMessage.value = `OTP sent to ${email.value}`
+    setTimeout(() => successMessage.value = '', 3000)
+
+  } catch (err) {
+    if (err.response && err.response.data && err.response.data.errors) {
+      errorMessage.value = Object.values(err.response.data.errors).flat()[0]
+    } else {
+      errorMessage.value = err.response?.data?.message || "Failed to send OTP."
+    }
+    otpSent.value = false 
+  } finally {
+    loadingOtp.value = false
+  }
+}
+
+const verifyOtp = async () => {
+  if (!otpInput.value) return
+
+  try {
+    await axios.post('/api/verify-otp', { 
+      email: email.value, 
+      otp: otpInput.value 
+    })
+
+    emailVerified.value = true
+    otpSent.value = false
+    errorMessage.value = ''
+    successMessage.value = "Email verified successfully!"
+    setTimeout(() => successMessage.value = '', 3000)
+    
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || "Invalid or expired OTP."
+  }
+}
+
+const startTimer = (seconds) => {
+  timer.value = seconds
+  clearInterval(timerInterval)
+  timerInterval = setInterval(() => {
+    if (timer.value > 0) {
+      timer.value--
+    } else {
+      clearInterval(timerInterval)
+    }
+  }, 1000)
+}
+
 const handleRegister = async () => {
   errorMessage.value = ''
   successMessage.value = ''
 
+  if (!emailVerified.value) {
+    errorMessage.value = 'Please verify your email address first.'
+    return
+  }
+  
   if (!captchaToken.value) {
     errorMessage.value = 'Please complete the CAPTCHA verification.'
     return
