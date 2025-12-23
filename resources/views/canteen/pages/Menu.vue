@@ -1,9 +1,20 @@
 <template>
   <div class="flex flex-col min-h-screen fade-in">
-    <!-- Menu Grid -->
     <div class="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900 w-full transition-colors duration-300">
       
-      <!-- Categories (Dynamic) -->
+      <div class="mb-6 relative w-full max-w-md mx-auto sm:mx-0">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <i class="fas fa-search text-gray-400 dark:text-orange-500 transition-colors duration-300"></i>
+        </div>
+        <input
+          v-model="searchQuery"
+          type="text"
+          maxlength="100"
+          placeholder="Search for food..."
+          class="w-full pl-10 pr-4 py-3 bg-transparent border-b-2 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-orange-500 dark:focus:border-orange-500 transition-all duration-300"
+        />
+      </div>
+
       <div class="flex gap-3 mb-6 overflow-x-auto pb-2 scrollbar-hide">
         <button
           v-for="cat in categories"
@@ -16,13 +27,10 @@
         </button>
       </div>
 
-      <!-- Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
         
-        <!-- Menu Item Card -->
         <div v-for="item in filteredMenu" :key="item.product_id" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition">
           
-          <!-- Image - Clickable to view details -->
           <div 
             @click="openProductDetails(item)"
             class="h-48 w-full bg-gray-100 dark:bg-gray-700 relative cursor-pointer group"
@@ -31,11 +39,9 @@
              <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
                 <i class="fas fa-utensils text-4xl"></i>
              </div>
-             <!-- Category Badge (Fixed JSON Display) -->
              <span class="absolute top-3 left-3 bg-white/90 dark:bg-black/60 backdrop-blur text-xs font-bold px-2 py-1 rounded-md text-gray-800 dark:text-white uppercase tracking-wide">
                 {{ typeof item.category === 'object' && item.category ? item.category.name : item.category }}
              </span>
-             <!-- View Details Overlay -->
              <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                <span class="text-white opacity-0 group-hover:opacity-100 transition-opacity font-semibold text-sm">
                  <i class="fas fa-eye mr-2"></i>View Details
@@ -43,7 +49,6 @@
              </div>
           </div>
 
-          <!-- Content -->
           <div class="p-4 flex flex-col flex-1">
             <div class="flex-1">
                 <div class="flex justify-between items-start mb-1">
@@ -60,9 +65,7 @@
             <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
               <span class="text-orange-600 dark:text-orange-400 font-extrabold text-lg">RM {{ Number(item.price).toFixed(2) }}</span>
               
-              <!-- Add Button / Quantity Selector Container -->
               <div class="relative min-w-[120px] flex justify-end">
-                <!-- Add Button (shows when not in cart) -->
                 <Transition
                   enter-active-class="transition-all duration-300 ease-out"
                   enter-from-class="opacity-0 scale-75"
@@ -81,7 +84,6 @@
                     <i class="fas fa-cart-plus"></i> Add
                   </button>
                   
-                  <!-- Quantity Selector (shows when in cart) -->
                   <div 
                     v-else 
                     :key="'qty-' + item.product_id"
@@ -109,16 +111,14 @@
           </div>
         </div>
 
-        <!-- Empty State -->
         <div v-if="filteredMenu.length === 0" class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400 dark:text-gray-500">
-          <i class="fas fa-hamburger text-6xl mb-4 opacity-20"></i>
-          <p>No items found in this category.</p>
+          <i class="fas fa-search text-6xl mb-4 opacity-20"></i>
+          <p>No items found matching your search.</p>
         </div>
 
       </div>
     </div>
 
-    <!-- Product Details Modal -->
     <ProductModal
       :isOpen="isProductModalOpen"
       :product="selectedProduct"
@@ -135,16 +135,15 @@ import axios from 'axios'
 import ProductModal from '../components/Product-modal.vue'
 
 const currentCategory = ref('All')
+const searchQuery = ref('') // NEW: Search state
 const menuItems = ref([])
-const pendingUpdates = ref({}) // Track pending quantity updates
-const updateTimeouts = ref({}) // Track debounce timeouts
+const pendingUpdates = ref({}) 
+const updateTimeouts = ref({}) 
 const isProductModalOpen = ref(false)
 const selectedProduct = ref(null)
 
 const cartStore = useCartStore()
 const toggleCart = inject('toggleCart')
-
-// Use the global notification state from App.vue
 const notification = inject('notificationState')
 
 const fetchMenu = async () => {
@@ -156,20 +155,16 @@ const fetchMenu = async () => {
   }
 }
 
-// Polling interval for real-time updates
 let pollingInterval = null
 
 onMounted(() => {
   fetchMenu()
-  
-  // Start polling for menu updates every 5 seconds
   pollingInterval = setInterval(() => {
     fetchMenu()
   }, 5000)
 })
 
 onUnmounted(() => {
-  // Clear polling when component is unmounted
   if (pollingInterval) {
     clearInterval(pollingInterval)
   }
@@ -180,7 +175,6 @@ const categories = computed(() => {
     const cats = new Set(['All'])
     menuItems.value.forEach(item => {
         if (item.category) {
-            // Handle if category is object (from backend relationship) or string
             const name = typeof item.category === 'object' ? item.category.name : item.category
             cats.add(name)
         }
@@ -188,14 +182,28 @@ const categories = computed(() => {
     return Array.from(cats)
 })
 
+// UPDATED: Filter by Category AND Search Query
 const filteredMenu = computed(() => {
-    if (currentCategory.value === 'All') {
-        return menuItems.value
+    let items = menuItems.value
+
+    // 1. Filter by Category
+    if (currentCategory.value !== 'All') {
+        items = items.filter(item => {
+            const catName = typeof item.category === 'object' ? item.category.name : item.category
+            return catName === currentCategory.value
+        })
     }
-    return menuItems.value.filter(item => {
-        const catName = typeof item.category === 'object' ? item.category.name : item.category
-        return catName === currentCategory.value
-    })
+
+    // 2. Filter by Search Query
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.toLowerCase().trim()
+        items = items.filter(item => 
+            item.name.toLowerCase().includes(query) || 
+            (item.description && item.description.toLowerCase().includes(query))
+        )
+    }
+
+    return items
 })
 
 const filterMenu = (cat) => {
@@ -207,7 +215,6 @@ const isInCart = (productId) => {
 }
 
 const getCartQuantity = (productId) => {
-  // Check if there's a pending update first
   if (pendingUpdates.value[productId] !== undefined) {
     return pendingUpdates.value[productId]
   }
@@ -216,34 +223,29 @@ const getCartQuantity = (productId) => {
 }
 
 const updateQuantityDebounced = (productId, newQty) => {
-  // Clear existing timeout for this product
   if (updateTimeouts.value[productId]) {
     clearTimeout(updateTimeouts.value[productId])
   }
 
-  // Update cart store immediately for real-time UI sync
   const item = cartStore.items.find(i => i.id === productId)
   if (item) {
     const previousQty = item.qty
-    item.qty = newQty // Update cart store immediately
-    pendingUpdates.value[productId] = newQty // Also track pending update
+    item.qty = newQty 
+    pendingUpdates.value[productId] = newQty 
 
-    // Debounce the actual API call
     updateTimeouts.value[productId] = setTimeout(async () => {
       try {
         await cartStore.updateQuantity(productId, newQty)
-        // Clear pending update after successful update
         delete pendingUpdates.value[productId]
       } catch (error) {
         console.error('Failed to update quantity:', error)
-        // Revert both on error
         if (item) {
           item.qty = previousQty
         }
         delete pendingUpdates.value[productId]
         showNotification('error', 'Error', 'Failed to update quantity')
       }
-    }, 300) // Wait 300ms after last click before sending API request
+    }, 300) 
   }
 }
 
@@ -251,14 +253,12 @@ const incrementQty = async (productId) => {
   const currentQty = getCartQuantity(productId)
   const newQty = currentQty + 1
   
-  // Add bounce animation to quantity
   const qtyElement = document.querySelector(`[key="qty-${productId}"] .quantity-display`)
   if (qtyElement) {
     qtyElement.style.animation = 'quantityBounce 0.3s ease-out'
     setTimeout(() => qtyElement.style.animation = '', 300)
   }
   
-  // Update immediately with debounce
   updateQuantityDebounced(productId, newQty)
 }
 
@@ -266,14 +266,12 @@ const decrementQty = async (productId) => {
   const currentQty = getCartQuantity(productId)
   
   if (currentQty <= 1) {
-    // Clear any pending updates
     if (updateTimeouts.value[productId]) {
       clearTimeout(updateTimeouts.value[productId])
       delete updateTimeouts.value[productId]
       delete pendingUpdates.value[productId]
     }
     
-    // Remove from cart when clicking minus at quantity 1
     try {
       await cartStore.removeItem(productId)
       showNotification('info', 'Removed', 'Item removed from cart')
@@ -282,17 +280,14 @@ const decrementQty = async (productId) => {
       showNotification('error', 'Error', 'Failed to remove item')
     }
   } else {
-    // Decrease quantity
     const newQty = currentQty - 1
     
-    // Add bounce animation to quantity
     const qtyElement = document.querySelector(`[key="qty-${productId}"] .quantity-display`)
     if (qtyElement) {
       qtyElement.style.animation = 'quantityBounce 0.3s ease-out'
       setTimeout(() => qtyElement.style.animation = '', 300)
     }
     
-    // Update immediately with debounce
     updateQuantityDebounced(productId, newQty)
   }
 }

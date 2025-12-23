@@ -41,7 +41,8 @@
           <i class="fas fa-note-sticky text-orange-600"></i>
           Note (Optional)
         </h2>
-        <textarea v-model="note" rows="3" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none dark:text-white resize-none" placeholder="E.g., No onions, extra spicy, separate packaging..."></textarea>
+        <textarea v-model="note" rows="3" maxlength="500" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none dark:text-white resize-none" placeholder="E.g., No onions, extra spicy, separate packaging..."></textarea>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ note.length }}/500 characters</p>
       </div>
 
       <!-- Dining Option Section -->
@@ -115,6 +116,12 @@
     <!-- Fixed Bottom Action -->
     <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 shadow-lg">
       <div class="max-w-4xl mx-auto">
+        <!-- Error Message -->
+        <div v-if="errorMessage" class="mb-3 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-sm flex items-center gap-2">
+          <i class="fas fa-exclamation-circle"></i>
+          <span>{{ errorMessage }}</span>
+        </div>
+        
         <button 
           @click="placeOrder" 
           :disabled="cartItems.length === 0 || !pickupTime"
@@ -200,9 +207,13 @@ const goBack = () => {
   router.push('/menu') // go back to menu page
 }
 
+const errorMessage = ref('')
+
 const placeOrder = async () => {
+  errorMessage.value = ''
+  
   if (!pickupTime.value) {
-    alert('Please select a pickup time')
+    errorMessage.value = 'Please select a pickup time'
     return
   }
 

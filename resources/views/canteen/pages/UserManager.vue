@@ -127,8 +127,9 @@
           </div>
 
           <div>
-              <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email</label>
-              <input type="email" v-model="form.email" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+              <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Email (TARC)</label>
+              <input type="email" v-model="form.email" pattern=".*@(student\.tarc\.edu\.my|tarc\.edu\.my)$" title="Must be a TARC email address (@student.tarc.edu.my or @tarc.edu.my)" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Must end with @student.tarc.edu.my or @tarc.edu.my</p>
           </div>
 
           <div>

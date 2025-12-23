@@ -44,6 +44,7 @@
             <input type="text" v-model="form.name" id="name" required maxlength="50"
               class="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none transition"
               placeholder="e.g. Western Food">
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ form.name?.length || 0 }}/50 characters</p>
           </div>
 
           <button type="submit" :disabled="loading"

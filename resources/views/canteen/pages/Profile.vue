@@ -62,7 +62,8 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">Username</label>
-                    <input type="text" v-model="form.username" class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition">
+                    <input type="text" v-model="form.username" maxlength="30" class="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-gray-800 dark:text-white transition">
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ form.username?.length || 0 }}/30 characters</p>
                 </div>
                 <div class="flex justify-end">
                     <button type="button" @click="updateProfile" :disabled="profileLoading" class="bg-gray-900 dark:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-500 transition text-sm flex items-center gap-2 disabled:opacity-50">

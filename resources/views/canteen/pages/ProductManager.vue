@@ -187,7 +187,8 @@
 
           <div>
             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Description</label>
-            <textarea v-model="form.description" rows="3" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
+            <textarea v-model="form.description" rows="3" maxlength="500" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none"></textarea>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ form.description?.length || 0 }}/500 characters</p>
           </div>
 
           <!-- Availability Toggle -->

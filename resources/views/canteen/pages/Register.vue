@@ -31,7 +31,7 @@
               <input 
                 type="email" 
                 v-model="email" 
-                placeholder="@student.tarc.edu.my" 
+                placeholder="@student.tarc.edu.my / tarc.edu.my" 
                 class="w-full p-3 border rounded-xl outline-none transition disabled:opacity-70 disabled:cursor-not-allowed"
                 :class="emailVerified 
                   ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 pr-10' 
