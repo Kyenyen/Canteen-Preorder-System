@@ -161,6 +161,10 @@ const showNotification = (message, type = 'success', duration = 3000) => {
   notification.type = type
   notification.show = true
 }
+
+const goToHome = () => {
+  router.push('/home')
+}
 </script>
 
 <style scoped>
