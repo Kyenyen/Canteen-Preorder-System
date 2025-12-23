@@ -146,7 +146,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { useCartStore } from '../../../js/stores/cart'
@@ -155,6 +155,7 @@ import Notification from '../components/Notification.vue'
 const router = useRouter()
 const route = useRoute()
 const cartStore = useCartStore()
+const toggleCart = inject('toggleCart')
 const order = ref(null)
 const loading = ref(true)
 const downloading = ref(false)
@@ -247,10 +248,17 @@ const orderAgain = async () => {
     
     showNotification(`${order.value.products.length} items added to cart!`, 'success')
     
-    // Redirect to menu after a short delay
+    // Redirect to menu and open cart sidebar after showing notification
     setTimeout(() => {
       router.push('/menu')
-    }, 1500)
+      
+      // Open cart after navigation
+      setTimeout(() => {
+        if (toggleCart) {
+          toggleCart()
+        }
+      }, 300)
+    }, 1000)
   } catch (err) {
     console.error('Error adding items to cart:', err)
     showNotification('Failed to add items to cart', 'error')

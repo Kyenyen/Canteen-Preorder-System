@@ -290,7 +290,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed, inject } from 'vue'
 import axios from 'axios'
 import { useCartStore } from '../../../js/stores/cart'
 import { useRouter } from 'vue-router'
@@ -302,6 +302,7 @@ const downloadingOrder = ref(null)
 const sendingEmail = ref(null)
 const cartStore = useCartStore()
 const router = useRouter()
+const toggleCart = inject('toggleCart')
 const notification = reactive({ show: false, title: '', message: '', type: 'success' })
 
 // Cancel confirmation modal
@@ -386,10 +387,17 @@ const reorder = async (orderId) => {
     reorderMessage.value = `${order.products.length} item(s) added to cart!`
     showReorderNotification.value = true
     
-    // Navigate to menu page after a short delay
+    // Navigate to menu page and open cart after showing notification
     setTimeout(() => {
       router.push('/menu')
-    }, 800)
+      
+      // Open cart after navigation
+      setTimeout(() => {
+        if (toggleCart) {
+          toggleCart()
+        }
+      }, 300)
+    }, 1000)
   } catch (err) {
     console.error('Failed to reorder', err)
     showNotification('Failed to add items to cart. Please try again.', 'error')
