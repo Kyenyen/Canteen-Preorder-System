@@ -60,6 +60,7 @@
             <th class="px-6 py-4">User</th>
             <th class="px-6 py-4">Items</th>
             <th class="px-6 py-4">Note</th>
+            <th class="px-6 py-4">Dining Option</th>
             <th @click="toggleSort('pickup_time')" class="px-6 py-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors select-none">
               <div class="flex items-center gap-2">
                 Pickup Time
@@ -100,6 +101,14 @@
                 {{ order.note }}
               </span>
               <span v-else class="text-xs text-gray-400 dark:text-gray-500">-</span>
+            </td>
+            <td class="px-6 py-4">
+              <span :class="{
+                'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300': order.dining_option === 'Takeaway',
+                'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300': order.dining_option === 'Dine In'
+              }" class="px-2 py-1 rounded-full text-xs font-semibold">
+                {{ order.dining_option || 'Takeaway' }}
+              </span>
             </td>
             <td class="px-6 py-4">{{ order.pickup_time }}</td>
             <td class="px-6 py-4">{{ formatCurrency(order.total) }}</td>
