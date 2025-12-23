@@ -47,15 +47,15 @@
                 <table class="main" role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="logo-container">
-                            <div class="logo-icon">🍔</div>
-                            <h1>UniCanteen</h1>
+                            <img src="{{ $message->embed(public_path('photos/logo.png')) }}" alt="KantinCanteen Logo" style="width: 94px; height: 64px; margin-bottom: 12px;">
+                            <h1>KantinCanteen</h1>
                         </td>
                     </tr>
                     
                     <tr>
                         <td class="content">
                             <h1 style="font-size: 22px; margin-bottom: 8px;">Order Confirmed!</h1>
-                            <p style="text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 30px;">Thank you for dining with UniCanteen</p>
+                            <p style="text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 30px;">Thank you for dining with KantinCanteen</p>
                             
                             <table class="order-meta" role="presentation" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
@@ -106,7 +106,7 @@
 
                 <div class="footer">
                     <p>
-                        &copy; {{ date('Y') }} UniCanteen &bull; Skip the queue, eat better.<br>
+                        &copy; {{ date('Y') }} KantinCanteen &bull; Skip the queue, eat better.<br>
                         Tunku Abdul Rahman University of Management and Technology
                     </p>
                 </div>

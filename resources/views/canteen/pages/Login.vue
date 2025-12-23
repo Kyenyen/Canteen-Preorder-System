@@ -4,10 +4,14 @@
       
       <!-- Logo & Title -->
       <div class="text-center mb-6">
-        <div class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
-          <i class="fas fa-burger"></i>
+        <div class="w-20 h-20 flex items-center justify-center mx-auto mb-4">
+          <img 
+            :src="'/photos/logo.png'" 
+            alt="KantinCanteen Logo" 
+            class="w-full h-full object-contain"
+          >
         </div>
-        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">UniCanteen</h2>
+        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">KantinCanteen</h2>
         <p class="text-gray-500 dark:text-gray-400 mt-2">Skip the queue, eat better.</p>
       </div>
 

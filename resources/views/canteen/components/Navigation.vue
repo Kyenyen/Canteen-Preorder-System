@@ -2,13 +2,17 @@
   <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex justify-between items-center shadow-sm z-50 transition-colors duration-300 relative">
     
     <router-link to="/home" class="flex items-center gap-3 cursor-pointer group">
-      <div class="bg-orange-500 text-white p-2 rounded-lg group-hover:bg-orange-600 transition-colors">
-        <i class="fas fa-utensils"></i>
-      </div>
-      <div>
-        <h1 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">UniCanteen</h1>
-      </div>
-    </router-link>
+  
+  <img 
+    :src="'/photos/logo.png'" 
+    alt="KantinCanteen Logo" 
+    class="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+  >
+
+  <div>
+    <h1 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">KantinCanteen</h1>
+  </div>
+</router-link>
 
     <div class="flex items-center gap-4">
         

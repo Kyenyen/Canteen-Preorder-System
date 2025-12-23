@@ -183,7 +183,7 @@
         <div v-if="receiptData" class="p-6">
           <!-- Order Info -->
           <div class="text-center mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-            <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">UniCanteen</h4>
+            <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">KantinCanteen</h4>
             <p class="text-sm text-gray-500 dark:text-gray-400">Order Receipt</p>
           </div>
 

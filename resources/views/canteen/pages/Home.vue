@@ -163,7 +163,7 @@ const fetchHomeData = async () => {
     console.error('Failed to fetch home data', err)
     // Fallback if API fails
     promo.value = {
-        title: 'UniCanteen Special',
+        title: 'KantinCanteen Special',
         description: "Enjoy delicious meals at student-friendly prices!"
     }
   }

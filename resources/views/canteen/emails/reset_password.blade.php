@@ -53,8 +53,8 @@
                 <table class="main" role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="logo-container">
-                            <div class="logo-icon">🍔</div>
-                            <h1>UniCanteen</h1>
+                            <img src="{{ $message->embed(public_path('photos/logo.png')) }}" alt="KantinCanteen Logo" style="width: 94px; height: 64px; margin-bottom: 12px;">
+                            <h1>KantinCanteen</h1>
                         </td>
                     </tr>
                     
@@ -86,7 +86,7 @@
 
                 <div class="footer">
                     <p>
-                        &copy; {{ date('Y') }} UniCanteen &bull; Skip the queue, eat better.<br>
+                        &copy; {{ date('Y') }} KantinCanteen &bull; Skip the queue, eat better.<br>
                         Tunku Abdul Rahman University of Management and Technology
                     </p>
                 </div>

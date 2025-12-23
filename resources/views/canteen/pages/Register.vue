@@ -4,7 +4,7 @@
       
       <div class="text-center mb-6">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h2>
-        <p class="text-gray-500 dark:text-gray-400 text-sm">Join UniCanteen today</p>
+        <p class="text-gray-500 dark:text-gray-400 text-sm">Join KantinCanteen today</p>
       </div>
 
       <div v-if="successMessage" class="mb-4 p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-300 text-sm rounded-lg flex items-center gap-2 animate-bounce">

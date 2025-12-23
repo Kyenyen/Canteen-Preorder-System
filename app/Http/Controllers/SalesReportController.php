@@ -228,6 +228,7 @@ class SalesReportController extends Controller
             'products.product_id',
             'products.name',
             'products.price',
+            'products.category_id',
             DB::raw('SUM(orderlist.quantity) as total_quantity'),
             DB::raw('SUM(orderlist.subtotal) as total_revenue')
         )
@@ -237,7 +238,7 @@ class SalesReportController extends Controller
             ->where('payments.refunded', false)
             ->where('orders.status', '!=', 'Cancelled')
             ->with('category:category_id,name')
-            ->groupBy('products.product_id', 'products.name', 'products.price')
+            ->groupBy('products.product_id', 'products.name', 'products.price', 'products.category_id')
             ->orderBy('total_quantity', 'desc')
             ->limit(15)
             ->get()

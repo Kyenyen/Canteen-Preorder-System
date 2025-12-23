@@ -135,7 +135,7 @@
 <body>
     <!-- Header -->
     <div class="header">
-        <h1>UniCanteen Sales Report</h1>
+        <h1>KantinCanteen Sales Report</h1>
         <p>Generated on {{ $generatedDate }}</p>
     </div>
 
@@ -241,7 +241,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p>&copy; {{ date('Y') }} UniCanteen. All rights reserved.</p>
+        <p>&copy; {{ date('Y') }} KantinCanteen. All rights reserved.</p>
         <p>This report was automatically generated and contains confidential business information.</p>
     </div>
 </body>
