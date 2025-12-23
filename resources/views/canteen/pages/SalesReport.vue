@@ -21,6 +21,23 @@
       </div>
     </div>
 
+    <!-- Date Range Filter -->
+    <div class="max-w-7xl mx-auto w-full mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+      <div class="flex flex-col md:flex-row items-center gap-4">
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">From:</label>
+          <input type="date" v-model="filters.startDate" @change="refreshReport" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">To:</label>
+          <input type="date" v-model="filters.endDate" @change="refreshReport" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 outline-none">
+        </div>
+        <button @click="resetDateFilter" class="ml-auto px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition">
+          <i class="fas fa-redo mr-2"></i>Reset
+        </button>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div v-if="loading" class="max-w-7xl mx-auto w-full flex items-center justify-center py-20">
       <div class="text-center">
@@ -259,6 +276,12 @@ const dailyOrders = ref([])
 const revenueByCategory = ref([])
 const topSellingItems = ref([])
 
+// Date filters
+const filters = reactive({
+  startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+  endDate: new Date().toISOString().split('T')[0]
+})
+
 // Chart references
 const dailyRevenueChart = ref(null)
 const dailyOrdersChart = ref(null)
@@ -281,7 +304,11 @@ const getPhotoUrl = (path) => {
 const fetchSalesReport = async () => {
   loading.value = true
   try {
-    const res = await axios.get('/api/admin/sales-report')
+    const params = new URLSearchParams()
+    if (filters.startDate) params.append('startDate', filters.startDate)
+    if (filters.endDate) params.append('endDate', filters.endDate)
+    
+    const res = await axios.get(`/api/admin/sales-report?${params.toString()}`)
     const data = res.data
 
     // Update stats
@@ -498,10 +525,20 @@ const initializeCategoryRevenueChart = () => {
   })
 }
 
+const resetDateFilter = () => {
+  filters.startDate = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
+  filters.endDate = new Date().toISOString().split('T')[0]
+  refreshReport()
+}
+
 const downloadPDF = async () => {
   downloading.value = true
   try {
-    const response = await axios.get('/api/admin/sales-report/pdf', {
+    const params = new URLSearchParams()
+    if (filters.startDate) params.append('startDate', filters.startDate)
+    if (filters.endDate) params.append('endDate', filters.endDate)
+    
+    const response = await axios.get(`/api/admin/sales-report/pdf?${params.toString()}`, {
       responseType: 'blob'
     })
     

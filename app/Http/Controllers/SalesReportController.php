@@ -14,29 +14,39 @@ use Dompdf\Options;
 class SalesReportController extends Controller
 {
     /**
-     * Get comprehensive sales report data
+     * Get comprehensive sales report data with optional date filtering
      */
-    public function getSalesReport()
+    public function getSalesReport(\Illuminate\Http\Request $request)
     {
-        // Get total revenue (only paid orders, exclude cancelled)
+        // Get optional date range parameters
+        $startDate = $request->query('startDate')
+            ? \Carbon\Carbon::parse($request->query('startDate'))->toDateString()
+            : now()->subDays(30)->toDateString();
+
+        $endDate = $request->query('endDate')
+            ? \Carbon\Carbon::parse($request->query('endDate'))->toDateString()
+            : now()->toDateString();
+
+        // Get total revenue (only paid orders, exclude cancelled) - for selected period
         $totalRevenue = Order::whereHas('payment', function ($query) {
             $query->where('refunded', false);
         })
-        ->where('status', '!=', 'Cancelled')
-        ->sum('total');
+            ->where('status', '!=', 'Cancelled')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->sum('total');
 
-        // Get total orders (all orders)
-        $totalOrders = Order::count();
+        // Get total orders (for selected period)
+        $totalOrders = Order::whereBetween('date', [$startDate, $endDate])->count();
 
         // Get average order value
         $averageOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
 
-        // Get daily revenue for the last 30 days
+        // Get daily revenue for the selected date range
         $dailyRevenue = Order::whereHas('payment', function ($query) {
             $query->where('refunded', false);
         })
             ->where('status', '!=', 'Cancelled')
-            ->where('date', '>=', now()->subDays(30)->toDateString())
+            ->whereBetween('date', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date')
             ->select('date', DB::raw('SUM(total) as revenue'))
@@ -48,8 +58,8 @@ class SalesReportController extends Controller
                 ];
             });
 
-        // Get daily orders for the last 30 days
-        $dailyOrders = Order::where('date', '>=', now()->subDays(30)->toDateString())
+        // Get daily orders for the selected date range
+        $dailyOrders = Order::whereBetween('date', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date')
             ->select('date', DB::raw('COUNT(*) as order_count'))
@@ -186,8 +196,8 @@ class SalesReportController extends Controller
         $totalRevenue = Order::whereHas('payment', function ($query) {
             $query->where('refunded', false);
         })
-        ->where('status', '!=', 'Cancelled')
-        ->sum('total');
+            ->where('status', '!=', 'Cancelled')
+            ->sum('total');
 
         // Get total orders
         $totalOrders = Order::count();
@@ -295,14 +305,14 @@ class SalesReportController extends Controller
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
         $options->set('isRemoteEnabled', true);
-        
+
         $dompdf = new Dompdf($options);
         $html = view('pdf.sales-report', $data)->render();
-        
+
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        
+
         return $dompdf->stream('sales-report-' . now()->format('Y-m-d') . '.pdf');
     }
 }
