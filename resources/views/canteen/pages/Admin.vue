@@ -2,6 +2,11 @@
   <!-- FIX: Changed 'h-full' to 'min-h-screen'. -->
   <!-- 'h-full' relies on the parent having a height. 'min-h-screen' ensures the background covers the full viewport height even if content is short. -->
   <div class="w-full min-h-screen flex flex-col fade-in p-6 overflow-y-auto bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Confirmation Modal -->
+    <ConfirmModal ref="confirmModal" :is-loading="isLoading" @confirm="handleConfirmCancel" />
+    
+    <!-- Toast Notification -->
+    <Toast ref="toast" />
     
     <!-- Header -->
     <!-- Added shrink-0 to prevent header from squishing if screen is small -->
@@ -108,26 +113,35 @@
                 </span>
             </td>
             <td class="px-6 py-4 text-right">
-              <button 
-                v-if="order.status === 'Preparing'" 
-                @click="updateStatus(order.order_id, 'Ready')" 
-                class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition shadow-sm"
-              >
-                Mark Ready
-              </button>
-              <button 
-                v-if="order.status === 'Ready'" 
-                @click="updateStatus(order.order_id, 'Completed')" 
-                class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition shadow-sm"
-              >
-                Mark Complete
-              </button>
-              <span 
-                v-if="order.status === 'Completed'" 
-                class="text-xs text-gray-400 dark:text-gray-500 italic"
-              >
-                Order Completed
-              </span>
+              <div class="flex gap-2 justify-end">
+                <button 
+                  v-if="order.status === 'Preparing'" 
+                  @click="updateStatus(order.order_id, 'Ready')" 
+                  class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition shadow-sm"
+                >
+                  Mark Ready
+                </button>
+                <button 
+                  v-if="order.status === 'Preparing'" 
+                  @click="cancelOrder(order.order_id)" 
+                  class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition shadow-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  v-if="order.status === 'Ready'" 
+                  @click="updateStatus(order.order_id, 'Completed')" 
+                  class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition shadow-sm"
+                >
+                  Mark Complete
+                </button>
+                <span 
+                  v-if="order.status === 'Completed'" 
+                  class="text-xs text-gray-400 dark:text-gray-500 italic"
+                >
+                  Order Completed
+                </span>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -147,12 +161,18 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+import ConfirmModal from '../components/Confirm-modal.vue'
+import Toast from '../components/Toast.vue'
 
 const orders = ref([])
 const selectedStatus = ref('All')
 const sortBy = ref('date')
 const sortOrder = ref('desc')
 const searchQuery = ref('')
+const confirmModal = ref(null)
+const toast = ref(null)
+const pendingOrderId = ref(null)
+const isLoading = ref(false)
 
 const toggleSort = (column) => {
   if (sortBy.value === column) {
@@ -241,6 +261,39 @@ const updateStatus = async (orderId, newStatus) => {
   } catch (err) {
     console.error('Failed to update status', err)
     alert('Error updating status')
+  }
+}
+
+const cancelOrder = (orderId) => {
+  pendingOrderId.value = orderId
+  confirmModal.value?.openModal({
+    customTitle: 'Cancel Order',
+    customMessage: 'Are you sure you want to cancel this order? The customer will be notified via email.',
+    customIcon: 'fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400'
+  })
+}
+
+const handleConfirmCancel = async () => {
+  if (!pendingOrderId.value) return
+  
+  const orderId = pendingOrderId.value
+  isLoading.value = true
+  
+  try {
+    await axios.post(`/api/admin/orders/${orderId}/cancel`, {})
+    
+    const order = orders.value.find(o => o.order_id === orderId)
+    if(order) order.status = 'Cancelled'
+    
+    toast.value?.show('Order cancelled successfully. Customer notified via email.')
+    pendingOrderId.value = null
+  } catch (err) {
+    console.error('Failed to cancel order', err)
+    toast.value?.show(err.response?.data?.message || 'Error cancelling order')
+    pendingOrderId.value = null
+  } finally {
+    isLoading.value = false
+    confirmModal.value?.closeModal()
   }
 }
 
