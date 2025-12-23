@@ -146,8 +146,8 @@
 <body>
     <div class="receipt">
         <div class="header">
-            <div class="logo-icon">🍔</div>
-            <h1>UniCanteen Receipt</h1>
+            <img src="https://raw.githubusercontent.com/Kyenyen/Canteen-Preorder-System/master/public/photos/logo.png" alt="KantinCanteen Logo" style="width: 94px; height: 64px; margin-bottom: 12px;">
+            <h1>KantinCanteen Receipt</h1>
             <p>Order Confirmation & Details</p>
         </div>
 
@@ -202,7 +202,7 @@
 
         <div class="footer">
             <p><strong>Receipt Generated:</strong> {{ now()->format('Y-m-d H:i:s') }}</p>
-            <p>&copy; {{ date('Y') }} UniCanteen &bull; Skip the queue, eat better.</p>
+            <p>&copy; {{ date('Y') }} KantinCanteen &bull; Skip the queue, eat better.</p>
             <p>Tunku Abdul Rahman University of Management and Technology</p>
         </div>
     </div>
