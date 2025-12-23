@@ -1,66 +1,103 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Canteen Preorder System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A web-based Canteen Preorder System built with **Laravel** (Backend) and **Vue.js** (Frontend). This system allows users to preorder food items, integrating **Stripe** for payments and **Google Sign-In** for authentication.
 
-## About Laravel
+## 🛠 Tech Stack
+- **Framework:** Laravel
+- **Frontend:** Vue.js 3 + Pinia + Vue Router
+- **Styling:** Tailwind CSS
+- **Database:** MySQL (via XAMPP)
+- **Payment Gateway:** Stripe
+- **PDF Generation:** DomPDF
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 📋 Prerequisites
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Before running the project, ensure you have the following software installed from their official websites:
 
-## Learning Laravel
+1.  **XAMPP** (for MySQL Database)
+2.  **Node.js** (v24.11.1-x64)
+3.  **Composer**
+4.  **Stripe CLI** (stripe_1.33.0_windows_x86_64)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## ⚙️ Installation Guide
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Follow these steps to set up the project locally.
 
-## Laravel Sponsors
+## 1. Backend Setup (Laravel)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Open your terminal in the project root folder and run the following commands:
 
-### Premium Partners
+### Install PHP dependencies
+composer install
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### Install required packages for PDF and Payments
+composer require dompdf/dompdf
+composer require stripe/stripe-php
 
-## Contributing
+### Create the environment file
+cp .env.example .env
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Generate Application Key
+php artisan key:generate
 
-## Code of Conduct
+### Link the storage folder
+php artisan storage:link
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
+## 2. Frontend Setup (Vue.js & Tailwind)
+### Core Vue dependencies
+npm install vue@3
+npm install pinia
+npm install vue-router@4
+npm install vue@3 @vitejs/plugin-vue --save-dev
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### UI & Utilities
+npm install chart.js
+npm install vue3-google-signin
+npm install vue-recaptcha
+npm install @stripe/stripe-js
 
-## License
+### Tailwind CSS Setup
+npm install -D tailwindcss@3.4.1 postcss autoprefixer
+node node_modules/tailwindcss/lib/cli.js init -p
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## 3. Database Configuration
+1. Open XAMPP Control Panel and start Apache and MySQL.
+2. Create a new database in phpMyAdmin (usually named canteen_system or similar—check your .env file DB_DATABASE setting).
+3. Run the migrations and seeders:
+
+### Run database migrations
+php artisan migrate
+
+### Seed the admin user
+php artisan db:seed --class=AdminUserSeeder
+
+### (Optional) If you need to reset the database completely later:
+php artisan migrate:fresh
+
+
+
+# 🚀 How to Run
+You need to run the backend and frontend terminals simultaneously.
+
+## Terminal 1 (Backend):
+php artisan serve
+
+## Terminal 2 (Frontend):
+npm run dev
+
+After these, the application should now be accessible at http://127.0.0.1:8000 (or the URL provided in your terminal 1).
+
+
+## 🔑 Key Configuration (.env)
+Ensure your .env file has the following keys configured (obtained from your Stripe and Google Console):
+
+STRIPE_KEY=your_stripe_public_key
+STRIPE_SECRET=your_stripe_secret_key
+
+GOOGLE_CLIENT_ID=your_google_client_id
