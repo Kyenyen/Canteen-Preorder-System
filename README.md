@@ -32,38 +32,38 @@ Follow these steps to set up the project locally.
 Open your terminal in the project root folder and run the following commands:
 
 ### Install PHP dependencies
-composer install
+composer install  
 
 ### Install required packages for PDF and Payments
-composer require dompdf/dompdf
-composer require stripe/stripe-php
+composer require dompdf/dompdf  
+composer require stripe/stripe-php  
 
 ### Create the environment file
-cp .env.example .env
+cp .env.example .env  
 
 ### Generate Application Key
-php artisan key:generate
+php artisan key:generate  
 
 ### Link the storage folder
-php artisan storage:link
+php artisan storage:link  
 
 
 ## 2. Frontend Setup (Vue.js & Tailwind)
 ### Core Vue dependencies
-npm install vue@3
-npm install pinia
-npm install vue-router@4
-npm install vue@3 @vitejs/plugin-vue --save-dev
+npm install vue@3  
+npm install pinia  
+npm install vue-router@4  
+npm install vue@3 @vitejs/plugin-vue --save-dev  
 
 ### UI & Utilities
-npm install chart.js
-npm install vue3-google-signin
-npm install vue-recaptcha
-npm install @stripe/stripe-js
+npm install chart.js  
+npm install vue3-google-signin  
+npm install vue-recaptcha  
+npm install @stripe/stripe-js  
 
 ### Tailwind CSS Setup
-npm install -D tailwindcss@3.4.1 postcss autoprefixer
-node node_modules/tailwindcss/lib/cli.js init -p
+npm install -D tailwindcss@3.4.1 postcss autoprefixer  
+node node_modules/tailwindcss/lib/cli.js init -p  
 
 
 ## 3. Database Configuration
@@ -72,27 +72,24 @@ node node_modules/tailwindcss/lib/cli.js init -p
 3. Run the migrations and seeders:
 
 ### Run database migrations
-php artisan migrate
+php artisan migrate  
 
 ### Seed the admin user
-php artisan db:seed --class=AdminUserSeeder
+php artisan db:seed --class=AdminUserSeeder  
 
 ### (Optional) If you need to reset the database completely later:
-php artisan migrate:fresh
-
-
+php artisan migrate:fresh  
 
 # 🚀 How to Run
 You need to run the backend and frontend terminals simultaneously.
 
 ## Terminal 1 (Backend):
-php artisan serve
+php artisan serve  
 
 ## Terminal 2 (Frontend):
-npm run dev
+npm run dev  
 
 After these, the application should now be accessible at http://127.0.0.1:8000 (or the URL provided in your terminal 1).
-
 
 ## 🔑 Key Configuration (.env)
 Ensure your .env file has the following keys configured (obtained from your Stripe and Google Console):
