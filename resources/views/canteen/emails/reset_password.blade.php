@@ -53,7 +53,7 @@
                 <table class="main" role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="logo-container">
-                            <img src="{{ $message->embed(public_path('photos/logo.png')) }}" alt="KantinCanteen Logo" style="width: 94px; height: 64px; margin-bottom: 12px;">
+                            <img src="https://raw.githubusercontent.com/Kyenyen/Canteen-Preorder-System/master/public/photos/logo.png" alt="KantinCanteen Logo" style="width: 94px; height: 64px; margin-bottom: 12px;">
                             <h1>KantinCanteen</h1>
                         </td>
                     </tr>
