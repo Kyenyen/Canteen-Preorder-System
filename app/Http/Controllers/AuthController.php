@@ -180,7 +180,6 @@ class AuthController extends Controller
         return $response->json('success') === true;
     }
 
-
     public function sendResetLinkEmail(Request $request)
     {
         $request->validate(['email' => 'required|email'], [
