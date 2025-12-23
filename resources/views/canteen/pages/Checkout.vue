@@ -63,18 +63,48 @@
         </div>
       </div>
 
-      <!-- Pickup Time Section -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-4">
+      <!-- Pickup Time Section (Takeaway) -->
+      <div v-if="diningOption === 'takeaway'" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-4">
         <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
           <i class="fas fa-clock text-orange-600"></i>
           Pickup Time
         </h2>
-        <div class="relative">
+        
+        <!-- Sunday Closed Message -->
+        <div v-if="pickupTimes.length === 0" class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl text-center">
+          <i class="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400 text-2xl mb-2"></i>
+          <p class="text-sm font-bold text-yellow-800 dark:text-yellow-300">Canteen Closed on Sundays</p>
+          <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Please visit us Monday - Saturday</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <i class="fas fa-clock mr-1"></i>Mon-Fri: 7:30 AM - 5:00 PM | Sat: 8:00 AM - 4:00 PM
+          </p>
+        </div>
+        
+        <!-- Pickup Time Selector -->
+        <div v-else class="relative">
           <select v-model="pickupTime" class="w-full p-3 pl-10 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none appearance-none dark:text-white">
             <option v-for="time in pickupTimes" :key="time" :value="time">{{ time }}</option>
           </select>
           <i class="fas fa-clock absolute left-3 top-3.5 text-gray-400 dark:text-gray-500"></i>
           <i class="fas fa-chevron-down absolute right-3 top-3.5 text-gray-400 dark:text-gray-500 text-xs"></i>
+        </div>
+      </div>
+
+      <!-- Estimated Time Section (Dine-In) -->
+      <div v-if="diningOption === 'dine-in'" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-4">
+        <h2 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+          <i class="fas fa-clock text-orange-600"></i>
+          Estimated Preparation Time
+        </h2>
+        <div class="space-y-2">
+          <label v-for="option in estimatedTimes" :key="option.value" class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:border-orange-500 dark:hover:border-orange-500 transition bg-gray-50 dark:bg-gray-700 group">
+            <input type="radio" name="estimated_time" v-model="estimatedTime" :value="option.value" class="w-4 h-4 text-orange-600 focus:ring-orange-500 border-gray-300">
+            <div class="ml-3 flex-1">
+              <span class="block text-sm font-bold text-gray-800 dark:text-white">{{ option.label }}</span>
+              <span v-if="option.subtitle" class="block text-xs text-gray-500 dark:text-gray-400">{{ option.subtitle }}</span>
+            </div>
+            <i :class="option.icon" class="text-gray-400 group-hover:text-orange-500"></i>
+          </label>
         </div>
       </div>
 
@@ -124,7 +154,7 @@
         
         <button 
           @click="placeOrder" 
-          :disabled="cartItems.length === 0 || !pickupTime"
+          :disabled="cartItems.length === 0 || (diningOption === 'takeaway' && (pickupTimes.length === 0 || !pickupTime)) || (diningOption === 'dine-in' && !estimatedTime)"
           class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <i class="fas fa-shopping-cart"></i>
@@ -156,7 +186,8 @@ const router = useRouter()
 const cartStore = useCartStore()
 
 const note = ref('')
-const pickupTime = ref('11:00 AM') // Set default pickup time
+const pickupTime = ref('As Soon As Possible') // Set default pickup time
+const estimatedTime = ref('asap') // Set default estimated time for dine-in
 const paymentMethod = ref('fpx')
 const diningOption = ref('takeaway') // Set default dining option
 const showPaymentModal = ref(false)
@@ -168,13 +199,57 @@ const orderData = computed(() => ({
     quantity: item.qty,
   })),
   note: note.value,
-  pickup_time: pickupTime.value,
+  pickup_time: diningOption.value === 'takeaway' ? pickupTime.value : estimatedTime.value,
   payment_method: paymentMethod.value,
   dining_option: diningOption.value,
   total: total.value
 }))
 
-const pickupTimes = ['11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM'] // example
+// Generate pickup times based on day of week
+const pickupTimes = computed(() => {
+  const today = new Date().getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const times = ['As Soon As Possible']
+  
+  // Sunday - Closed
+  if (today === 0) {
+    return []
+  }
+  
+  let startHour, startMin, endHour
+  
+  // Saturday: 8:00 AM - 4:00 PM
+  if (today === 6) {
+    startHour = 8
+    startMin = 0
+    endHour = 16
+  } 
+  // Monday - Friday: 7:30 AM - 5:00 PM
+  else {
+    startHour = 7
+    startMin = 30
+    endHour = 17
+  }
+  
+  // Generate 30-minute intervals
+  for (let hour = startHour; hour <= endHour; hour++) {
+    for (let min of [0, 30]) {
+      // Skip if before start time or after end time
+      if ((hour === startHour && min < startMin) || hour > endHour) continue
+      if (hour === endHour && min > 0) continue
+      
+      const period = hour >= 12 ? 'PM' : 'AM'
+      const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)
+      const displayMin = min.toString().padStart(2, '0')
+      times.push(`${displayHour}:${displayMin} ${period}`)
+    }
+  }
+  
+  return times
+})
+
+const estimatedTimes = [
+  { value: 'asap', label: 'As Soon As Possible', subtitle: 'We\'ll prepare right away', icon: 'fas fa-bolt' }
+]
 
 const diningOptions = [
   { value: 'takeaway', label: 'Takeaway', subtitle: 'Grab and go', icon: 'fas fa-bag-shopping' },
@@ -212,8 +287,19 @@ const errorMessage = ref('')
 const placeOrder = async () => {
   errorMessage.value = ''
   
-  if (!pickupTime.value) {
+  // Check if Sunday and takeaway
+  if (diningOption.value === 'takeaway' && pickupTimes.value.length === 0) {
+    errorMessage.value = 'Sorry, the canteen is closed on Sundays'
+    return
+  }
+  
+  if (diningOption.value === 'takeaway' && !pickupTime.value) {
     errorMessage.value = 'Please select a pickup time'
+    return
+  }
+  
+  if (diningOption.value === 'dine-in' && !estimatedTime.value) {
+    errorMessage.value = 'Please select an estimated time'
     return
   }
 
