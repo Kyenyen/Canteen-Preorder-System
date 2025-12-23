@@ -104,9 +104,10 @@ class AuthController extends Controller
         }
 
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-        // -----------------------------
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
+        
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

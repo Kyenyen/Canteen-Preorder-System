@@ -41,10 +41,15 @@ class UserController extends Controller
                 'password' => 'required|string|min:6',
             ]);
 
-            // Generate a 5-character user ID
-            do {
-                $userId = strtoupper(substr(str_replace('-', '', Str::uuid()), 0, 5));
-            } while (User::where('user_id', $userId)->exists());
+        $lastUser = User::orderBy('user_id', 'desc')->first();
+
+        if ($lastUser) {
+            $number = intval(substr($lastUser->user_id, 1)) + 1;
+        } else {
+            $number = 1;
+        }
+
+        $userId = 'U' . str_pad($number, 4, '0', STR_PAD_LEFT);
 
             $user = User::create([
                 'user_id' => $userId,
