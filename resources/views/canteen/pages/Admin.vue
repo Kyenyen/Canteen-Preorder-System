@@ -5,8 +5,14 @@
     <!-- Confirmation Modal -->
     <ConfirmModal ref="confirmModal" :is-loading="isLoading" @confirm="handleConfirmCancel" />
     
-    <!-- Toast Notification -->
-    <Toast ref="toast" />
+    <!-- Notification -->
+    <Notification
+      :show="notification.show"
+      :type="notification.type"
+      :title="notification.title"
+      :message="notification.message"
+      @close="notification.show = false"
+    />
     
     <!-- Header -->
     <!-- Added shrink-0 to prevent header from squishing if screen is small -->
@@ -17,12 +23,33 @@
         </div>
         <div>
           <h2 class="text-2xl font-bold text-gray-800 dark:text-white transition-colors duration-300">Order Management</h2>
-          <p class="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">Track and manage all customer orders</p>
+          <div class="flex items-center gap-2">
+            <p class="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">Track and manage all customer orders</p>
+            <div v-if="isRefreshing" class="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+              <i class="fas fa-sync-alt fa-spin"></i>
+              <span>Syncing...</span>
+            </div>
+            <div v-else-if="lastRefresh" class="text-xs text-gray-400 dark:text-gray-500">
+              <i class="fas fa-check-circle text-green-500"></i>
+              Updated {{ lastRefresh }}
+            </div>
+          </div>
         </div>
       </div>
       
       <!-- Search and Filter -->
       <div class="flex items-center gap-3">
+        <!-- Manual Refresh Button -->
+        <button 
+          @click="manualRefresh" 
+          :disabled="isRefreshing"
+          class="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg text-sm transition-colors flex items-center gap-2 shadow-sm"
+          title="Refresh orders"
+        >
+          <i :class="['fas fa-sync-alt', isRefreshing ? 'fa-spin' : '']"></i>
+          <span class="hidden md:inline">Refresh</span>
+        </button>
+        
         <!-- Search -->
         <div class="relative">
           <input 
@@ -86,8 +113,17 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-300 transition-colors duration-300">
-          <tr v-for="order in filteredOrders" :key="order.order_id" class="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150">
-            <td class="px-6 py-4 font-mono text-xs">{{ order.order_id }}</td>
+          <tr v-for="order in filteredOrders" :key="order.order_id" 
+            :class="[
+              'hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150',
+              newOrderIds.has(order.order_id) ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-400 dark:ring-blue-600' : ''
+            ]">
+            <td class="px-6 py-4 font-mono text-xs">
+              {{ order.order_id }}
+              <span v-if="newOrderIds.has(order.order_id)" class="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full animate-pulse">
+                NEW
+              </span>
+            </td>
             <td class="px-6 py-4 font-medium">{{ order.user ? order.user.username : 'Unknown' }}</td>
             <td class="px-6 py-4">
               <ul class="list-disc list-inside text-xs">
@@ -168,10 +204,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, reactive } from 'vue'
 import axios from 'axios'
 import ConfirmModal from '../components/Confirm-modal.vue'
-import Toast from '../components/Toast.vue'
+import Notification from '../components/Notification.vue'
 
 const orders = ref([])
 const selectedStatus = ref('All')
@@ -179,9 +215,14 @@ const sortBy = ref('date')
 const sortOrder = ref('desc')
 const searchQuery = ref('')
 const confirmModal = ref(null)
-const toast = ref(null)
+const notification = reactive({ show: false, type: 'success', title: '', message: '' })
 const pendingOrderId = ref(null)
 const isLoading = ref(false)
+const isRefreshing = ref(false)
+const lastRefresh = ref('')
+const refreshInterval = ref(null)
+const previousOrderCount = ref(0)
+const newOrderIds = ref(new Set())
 
 const toggleSort = (column) => {
   if (sortBy.value === column) {
@@ -249,12 +290,62 @@ const filteredOrders = computed(() => {
   return sorted
 })
 
-const fetchOrders = async () => {
+const fetchOrders = async (showRefreshIndicator = true) => {
   try {
-    const res = await axios.get('/api/admin/orders') 
-    orders.value = res.data
+    if (showRefreshIndicator) {
+      isRefreshing.value = true
+    }
+    
+    const res = await axios.get('/api/admin/orders')
+    const newOrders = res.data
+    
+    // Detect new orders
+    if (orders.value.length > 0) {
+      const currentOrderIds = new Set(orders.value.map(o => o.order_id))
+      const incomingOrderIds = newOrders.map(o => o.order_id)
+      
+      // Find newly added orders
+      const newlyAdded = incomingOrderIds.filter(id => !currentOrderIds.has(id))
+      if (newlyAdded.length > 0) {
+        // Mark new orders for highlighting
+        newOrderIds.value = new Set(newlyAdded)
+        
+        // Show notification for new orders
+        notification.type = 'info'
+        notification.title = 'New Order Received'
+        notification.message = `${newlyAdded.length} new order${newlyAdded.length > 1 ? 's' : ''} received`
+        notification.show = true
+        
+        // Play notification sound (optional)
+        try {
+          const audio = new Audio('/notification.mp3')
+          audio.volume = 0.5
+          audio.play().catch(() => {})
+        } catch (e) {
+          // Ignore audio errors
+        }
+        
+        // Remove highlight after 5 seconds
+        setTimeout(() => {
+          newOrderIds.value.clear()
+        }, 5000)
+      }
+    }
+    
+    orders.value = newOrders
+    previousOrderCount.value = newOrders.length
+    
+    // Update last refresh time
+    const now = new Date()
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    lastRefresh.value = timeStr
+    
   } catch (err) {
     console.error('Failed to fetch orders', err)
+  } finally {
+    if (showRefreshIndicator) {
+      isRefreshing.value = false
+    }
   }
 }
 
@@ -267,9 +358,16 @@ const updateStatus = async (orderId, newStatus) => {
     const order = orders.value.find(o => o.order_id === orderId)
     if(order) order.status = newStatus
     
+    notification.type = 'success'
+    notification.title = 'Status Updated'
+    notification.message = `Order status updated to ${newStatus}`
+    notification.show = true
   } catch (err) {
     console.error('Failed to update status', err)
-    alert('Error updating status')
+    notification.type = 'error'
+    notification.title = 'Update Failed'
+    notification.message = 'Error updating status'
+    notification.show = true
   }
 }
 
@@ -294,11 +392,17 @@ const handleConfirmCancel = async () => {
     const order = orders.value.find(o => o.order_id === orderId)
     if(order) order.status = 'Cancelled'
     
-    toast.value?.show('Order cancelled successfully. Customer notified via email.')
+    notification.type = 'success'
+    notification.title = 'Order Cancelled'
+    notification.message = 'Order cancelled successfully. Customer notified via email.'
+    notification.show = true
     pendingOrderId.value = null
   } catch (err) {
     console.error('Failed to cancel order', err)
-    toast.value?.show(err.response?.data?.message || 'Error cancelling order')
+    notification.type = 'error'
+    notification.title = 'Cancellation Failed'
+    notification.message = err.response?.data?.message || 'Error cancelling order'
+    notification.show = true
     pendingOrderId.value = null
   } finally {
     isLoading.value = false
@@ -310,9 +414,36 @@ const formatCurrency = (value) => {
     return 'RM ' + Number(value).toFixed(2)
 }
 
+const manualRefresh = async () => {
+  await fetchOrders(true)
+}
+
+const startAutoRefresh = () => {
+  // Clear existing interval if any
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value)
+  }
+  
+  // Auto-refresh every 5 seconds (more frequent for real-time feel)
+  refreshInterval.value = setInterval(() => {
+    fetchOrders(false) // Silent refresh without indicator
+  }, 5000)
+}
+
+const stopAutoRefresh = () => {
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value)
+    refreshInterval.value = null
+  }
+}
+
 onMounted(() => {
   fetchOrders()
-  setInterval(fetchOrders, 30000)
+  startAutoRefresh()
+})
+
+onBeforeUnmount(() => {
+  stopAutoRefresh()
 })
 </script>
 
