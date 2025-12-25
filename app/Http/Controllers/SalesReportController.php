@@ -148,9 +148,9 @@ class SalesReportController extends Controller
         // Order statistics
         $orderStats = [
             'total_orders' => $totalOrders,
-            'completed_orders' => Order::where('status', 'completed')->count(),
-            'pending_orders' => Order::where('status', 'pending')->count(),
-            'cancelled_orders' => Order::where('status', 'cancelled')->count(),
+            'completed_orders' => Order::where('status', 'Completed')->count(),
+            'pending_orders' => Order::whereIn('status', ['Ready', 'Preparing'])->count(),
+            'cancelled_orders' => Order::where('status', 'Cancelled')->count(),
         ];
 
         // Revenue statistics
