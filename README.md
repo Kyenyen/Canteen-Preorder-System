@@ -17,9 +17,10 @@ A web-based Canteen Preorder System built with **Laravel** (Backend) and **Vue.j
 Before running the project, ensure you have the following software installed from their official websites:
 
 1.  **XAMPP** (for MySQL Database)
-2.  **Node.js** (v24.11.1-x64)
+2.  **Node.js**
 3.  **Composer**
-4.  **Stripe CLI** (newest stripe version)
+4.  **Stripe CLI**
+5.  **Ensure Node.js, Composer, and Stripe.exe (need folder/directory for it) are set as System variables in the PATH option for the Environment Variable setting**
 
 ---
 
