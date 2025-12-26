@@ -19,7 +19,7 @@ Before running the project, ensure you have the following software installed fro
 1.  **XAMPP** (for MySQL Database)
 2.  **Node.js** (v24.11.1-x64)
 3.  **Composer**
-4.  **Stripe CLI** (stripe_1.33.0_x86_64)
+4.  **Stripe CLI** (newest stripe version)
 
 ---
 
