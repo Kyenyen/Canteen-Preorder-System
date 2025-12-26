@@ -11,34 +11,29 @@ class Product extends Model
 {
     use HasFactory;
 
+    /** Primary key configuration */
     protected $primaryKey = 'product_id';
     public $incrementing = false;
     public $timestamps = false;
 
+    /** Mass Assignable Attributes */
     protected $fillable = [
         'product_id',
         'name',
-        'category_id', // NEW: Using the foreign key
+        'category_id',
         'price',
         'photo',
         'description',
         'is_available',
     ];
 
-    /**
-     * Define the relationship with the Category model.
-     * A Product belongs to one Category.
-     */
+    /** Relationship: Category this Product belongs to */
     public function category(): BelongsTo
     {
-        // Explicitly defining foreign key ('category_id') and owner key ('category_id' in categories table)
         return $this->belongsTo(Category::class, 'category_id', 'category_id');
     }
 
-    /**
-     * Define the relationship with the Order model.
-     * A Product can be in many Orders.
-     */
+    /** Relationship: Orders containing this Product */
     public function orders(): BelongsToMany
     {
         return $this->belongsToMany(Order::class, 'orderlist', 'product_id', 'order_id')

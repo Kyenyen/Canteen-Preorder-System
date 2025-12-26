@@ -7,9 +7,7 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
-    /**
-     * Get all cart items from session.
-     */
+    /** Get Cart Items */
     public function index(Request $request)
     {
         $cart = session()->get('cart', []);
@@ -43,9 +41,7 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Add item to cart or update quantity if exists.
-     */
+    /** Add Item to Cart */
     public function store(Request $request)
     {
         $request->validate([
@@ -83,9 +79,7 @@ class CartController extends Controller
         ], 201);
     }
 
-    /**
-     * Update cart item quantity.
-     */
+    /** Update Cart Item */
     public function update(Request $request, $productId)
     {
         $request->validate([
@@ -107,9 +101,7 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Remove item from cart.
-     */
+    /** Remove Item from Cart */
     public function destroy(Request $request, $productId)
     {
         $cart = session()->get('cart', []);
@@ -124,9 +116,7 @@ class CartController extends Controller
         return response()->json(['message' => 'Item removed from cart']);
     }
 
-    /**
-     * Clear all cart items.
-     */
+    /** Clear Cart */
     public function clear(Request $request)
     {
         session()->forget('cart');

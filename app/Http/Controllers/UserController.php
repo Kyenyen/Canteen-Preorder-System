@@ -11,9 +11,7 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    /**
-     * Get all users
-     */
+    /** Get All Users */
     public function index()
     {
         try {
@@ -28,9 +26,7 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Create a new user
-     */
+    /** Create User */
     public function store(Request $request)
     {
         try {
@@ -76,9 +72,7 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Update a user
-     */
+    /** Update User */
     public function updateUser(Request $request, $id)
     {
         try {
@@ -132,9 +126,7 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Delete a user
-     */
+    /** Delete User */
     public function destroy($id)
     {
         try {
@@ -158,9 +150,7 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Get all orders for a specific user
-     */
+    /** Get User Orders */
     public function getUserOrders($userId)
     {
         try {

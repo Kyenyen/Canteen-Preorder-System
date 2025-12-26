@@ -55,7 +55,7 @@ const iconClass = ref('fas fa-exclamation-triangle text-red-600 dark:text-red-40
 // Emit events
 const emit = defineEmits(['confirm', 'cancel'])
 
-// Methods to control modal
+// Open Modal
 function openModal({ customTitle, customMessage, customIcon }) {
   if (customTitle) title.value = customTitle
   if (customMessage) message.value = customMessage
@@ -63,11 +63,12 @@ function openModal({ customTitle, customMessage, customIcon }) {
   visible.value = true
 }
 
+// Close Modal
 function closeModal() {
   visible.value = false
 }
 
-// Default actions
+// Cancel
 function cancel() {
   if (!props.isLoading) {
     closeModal()
@@ -75,6 +76,7 @@ function cancel() {
   }
 }
 
+// Confirm
 function confirm() {
   emit('confirm')
 }

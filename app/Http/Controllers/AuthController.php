@@ -20,7 +20,7 @@ use App\Mail\OtpMail;
 
 class AuthController extends Controller
 {
-    // 1. Register with Custom Error Messages
+    /** Register User */
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -83,6 +83,7 @@ class AuthController extends Controller
         return response()->json(['token' => $token, 'user' => $user]);
     }
 
+    /** Send OTP */
     public function sendOtp(Request $request) {
         $request->validate(['email' => 'required|email']);
 
@@ -108,6 +109,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'OTP sent']);
     }
 
+    /** Verify OTP */
     public function verifyOtp(Request $request) {
         $request->validate([
             'email' => 'required|email',
@@ -126,7 +128,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'Verified']);
     }
 
-    // 2. Login with Custom Messages
+    /** Login User */
     public function login(Request $request)
     {
         $request->validate([
@@ -166,6 +168,7 @@ class AuthController extends Controller
         ]);
     }
 
+    /** Verify Captcha */
     private function verifyCaptcha($token)
     {
         if (app()->environment('testing')) {
@@ -180,6 +183,7 @@ class AuthController extends Controller
         return $response->json('success') === true;
     }
 
+    /** Send Reset Link Email */
     public function sendResetLinkEmail(Request $request)
     {
         $request->validate(['email' => 'required|email'], [
@@ -200,6 +204,7 @@ class AuthController extends Controller
         ]);
     }
 
+    /** Reset Password */
     public function reset(Request $request)
     {
         $request->validate([
@@ -234,7 +239,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // 3. Update Profile with Custom Messages
+    /** Update Profile */
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -273,7 +278,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // 4. Change Password with Custom Messages
+    /** Change Password */
     public function changePassword(Request $request)
     {
         $user = $request->user();
@@ -300,6 +305,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'Password changed successfully.']);
     }
 
+    /** Logout User */
     public function logout(Request $request)
     {
         $accessToken = $request->user()->currentAccessToken();

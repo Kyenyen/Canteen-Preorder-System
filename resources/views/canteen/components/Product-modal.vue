@@ -84,14 +84,17 @@ watch(() => props.product, () => {
     quantity.value = 1
 })
 
+// Computed Total Price
 const totalPrice = computed(() => {
     return props.product ? (props.product.price * quantity.value) : 0
 })
 
+// Format Price
 const formatPrice = (value) => {
     return Number(value).toFixed(2)
 }
 
+// Update Quantity
 const updateQty = (change) => {
     const newQty = quantity.value + change
     if (newQty >= 1) {
@@ -99,10 +102,12 @@ const updateQty = (change) => {
     }
 }
 
+// Close Modal
 const closeModal = () => {
     emit('close')
 }
 
+// Add To Cart
 const addToCart = () => {
     emit('add-to-cart', {
         product: props.product,

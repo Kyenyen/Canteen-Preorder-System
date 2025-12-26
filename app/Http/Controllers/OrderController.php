@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
-    // 1. Get Order History (Student)
+    /** Get Order History */
     public function index()
     {
         $userId = Auth::id();
@@ -30,7 +30,7 @@ class OrderController extends Controller
         return response()->json($orders);
     }
 
-    // 3. Cancel Order (Student)
+    /** Cancel Order */
     public function cancel($id)
     {
         // Find order belonging to the logged-in user
@@ -48,7 +48,7 @@ class OrderController extends Controller
         return response()->json(['message' => 'Order cancelled successfully']);
     }
 
-    // 4. View All Orders (Admin)
+    /** Get All Orders (Admin) */
     public function indexAdmin()
     {
         // Optional: Double check role if not relying solely on route middleware
@@ -64,7 +64,7 @@ class OrderController extends Controller
         return response()->json($orders);
     }
 
-    // 5. Update Status (Admin)
+    /** Update Order Status */
     public function updateStatus(Request $request, $id)
     {
         if (Auth::user()->role !== 'admin') {
@@ -83,7 +83,7 @@ class OrderController extends Controller
         return response()->json(['message' => 'Order status updated to ' . $request->status]);
     }
 
-    // 5.5 Cancel Order (Admin)
+    /** Cancel Order By Admin */
     public function cancelOrderByAdmin($id)
     {
         if (Auth::user()->role !== 'admin') {
@@ -122,7 +122,7 @@ class OrderController extends Controller
         }
     }
 
-    // 6. Send Cancellation Email
+    /** Send Cancellation Email */
     public function sendCancellationEmail($id)
     {
         // Find order belonging to the logged-in user
@@ -153,7 +153,7 @@ class OrderController extends Controller
         }
     }
 
-    // 7. Get Single Order (Student)
+    /** Get Single Order */
     public function show($id)
     {
         // Find order belonging to the logged-in user

@@ -110,11 +110,10 @@ const router = createRouter({
     routes
 })
 
+// Navigation Guard
 router.beforeEach((to, from, next) => {
     const appName = 'UniCanteen';
     document.title = to.meta.title ? `${appName} | ${to.meta.title}` : appName;
-
-    // 2. Existing Auth Logic
     const authStore = useAuthStore()
     const isAuthenticated = !!authStore.token
     const userRole = authStore.user ? authStore.user.role : null 

@@ -110,10 +110,12 @@ onMounted(() => {
   }, 500);
 });
 
+// Toggle Password
 const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
 
+// Handle Login
 const handleLogin = async () => {
   errorMessage.value = ''
 

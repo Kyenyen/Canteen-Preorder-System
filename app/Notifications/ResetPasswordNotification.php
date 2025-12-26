@@ -10,18 +10,22 @@ class ResetPasswordNotification extends Notification
 {
     use Queueable;
 
+    /** Password reset token */
     public $token;
 
+    /** Create New Password Reset Notification */
     public function __construct($token)
     {
         $this->token = $token;
     }
 
+    /** Get Notification Delivery Channels */
     public function via($notifiable)
     {
         return ['mail'];
     }
 
+    /** Build Password Reset Email */
     public function toMail($notifiable)
     {
         // Construct the reset URL

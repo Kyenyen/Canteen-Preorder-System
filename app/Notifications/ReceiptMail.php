@@ -12,27 +12,22 @@ class ReceiptMail extends Notification
 {
     use Queueable;
 
+    /** Order details for receipt */
     protected Order $order;
 
-    /**
-     * Create a new notification instance.
-     */
+    /** Create New Receipt Notification */
     public function __construct(Order $order)
     {
         $this->order = $order;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     */
+    /** Get Notification Delivery Channels */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
+    /** Build Order Receipt Email */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)

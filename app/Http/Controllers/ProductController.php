@@ -9,10 +9,7 @@ use Illuminate\Support\Facades\File;
 
 class ProductController extends Controller
 {
-    /**
-     * 1. Get All Products.
-     * Eager loads the related Category model.
-     */
+    /** Get All Products */
     public function index(Request $request)
     {
         $query = Product::with('category'); 
@@ -26,9 +23,7 @@ class ProductController extends Controller
         );
     }
 
-    /**
-     * 2. Get Single Product.
-     */
+    /** Get Single Product */
     public function show($id)
     {
         return response()->json(
@@ -36,9 +31,7 @@ class ProductController extends Controller
         );
     }
 
-    /**
-     * 3. Create New Product (Admin).
-     */
+    /** Create Product */
     public function store(Request $request)
     {
         $request->validate([
@@ -100,9 +93,7 @@ class ProductController extends Controller
         return response()->json(['message' => 'Product created', 'product' => $product], 201);
     }
 
-    /**
-     * 4. Update Product (Admin).
-     */
+    /** Update Product */
     public function updateProduct(Request $request, $id)
     {
         $product = Product::where('product_id', $id)->firstOrFail();
@@ -166,9 +157,7 @@ class ProductController extends Controller
         return response()->json(['message' => 'Product updated', 'product' => $product]);
     }
 
-    /**
-     * 5. Delete Product (Admin).
-     */
+    /** Delete Product */
     public function destroy($id)
     {
         $product = Product::where('product_id', $id)->firstOrFail();

@@ -224,6 +224,7 @@ const refreshInterval = ref(null)
 const previousOrderCount = ref(0)
 const newOrderIds = ref(new Set())
 
+// Toggle Sort
 const toggleSort = (column) => {
   if (sortBy.value === column) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
@@ -233,6 +234,7 @@ const toggleSort = (column) => {
   }
 }
 
+// Filtered Orders
 const filteredOrders = computed(() => {
   let filtered = orders.value
   
@@ -290,6 +292,7 @@ const filteredOrders = computed(() => {
   return sorted
 })
 
+// Fetch Orders
 const fetchOrders = async (showRefreshIndicator = true) => {
   try {
     if (showRefreshIndicator) {
@@ -349,6 +352,7 @@ const fetchOrders = async (showRefreshIndicator = true) => {
   }
 }
 
+// Update Status
 const updateStatus = async (orderId, newStatus) => {
   try {
     await axios.put(`/api/admin/orders/${orderId}/status`, {
@@ -371,6 +375,7 @@ const updateStatus = async (orderId, newStatus) => {
   }
 }
 
+// Cancel Order
 const cancelOrder = (orderId) => {
   pendingOrderId.value = orderId
   confirmModal.value?.openModal({
@@ -380,6 +385,7 @@ const cancelOrder = (orderId) => {
   })
 }
 
+// Handle Confirm Cancel
 const handleConfirmCancel = async () => {
   if (!pendingOrderId.value) return
   
@@ -410,14 +416,17 @@ const handleConfirmCancel = async () => {
   }
 }
 
+// Format Currency
 const formatCurrency = (value) => {
     return 'RM ' + Number(value).toFixed(2)
 }
 
+// Manual Refresh
 const manualRefresh = async () => {
   await fetchOrders(true)
 }
 
+// Start Auto Refresh
 const startAutoRefresh = () => {
   // Clear existing interval if any
   if (refreshInterval.value) {
@@ -430,6 +439,7 @@ const startAutoRefresh = () => {
   }, 5000)
 }
 
+// Stop Auto Refresh
 const stopAutoRefresh = () => {
   if (refreshInterval.value) {
     clearInterval(refreshInterval.value)

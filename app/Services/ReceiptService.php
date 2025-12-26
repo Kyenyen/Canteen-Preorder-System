@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 class ReceiptService
 {
-    /**
-     * Generate HTML receipt for an order
-     */
+    /** Generate Receipt HTML */
     public function generateReceiptHtml(Order $order): string
     {
         return view('canteen.receipts.receipt', ['order' => $order])->render();

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
+    /** Get Home Data */
     public function index(Request $request)
     {
         $user = $request->user();

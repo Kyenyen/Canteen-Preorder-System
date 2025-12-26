@@ -18,10 +18,7 @@ class ReceiptController extends Controller
         $this->receiptService = $receiptService;
     }
 
-    /**
-     * View/Download receipt (Admin only via direct download, Users via email request)
-     * GET /api/orders/{orderId}/receipt
-     */
+    /** View Receipt */
     public function viewReceipt($orderId)
     {
         $user = Auth::user();
@@ -54,10 +51,7 @@ class ReceiptController extends Controller
         }
     }
 
-    /**
-     * Download receipt as PDF (Admin or owner)
-     * GET /api/orders/{orderId}/receipt/download
-     */
+    /** Download Receipt */
     public function downloadReceipt($orderId)
     {
         $user = Auth::user();
@@ -78,10 +72,7 @@ class ReceiptController extends Controller
         }
     }
 
-    /**
-     * Request receipt via email (Users only)
-     * POST /api/orders/{orderId}/request-receipt
-     */
+    /** Request Receipt */
     public function requestReceipt($orderId)
     {
         $user = Auth::user();
@@ -110,10 +101,7 @@ class ReceiptController extends Controller
         }
     }
 
-    /**
-     * Send receipt email automatically (for payment success)
-     * Called internally after payment confirmation
-     */
+    /** Send Receipt Email */
     public function sendReceiptEmail($orderId)
     {
         try {
@@ -131,9 +119,7 @@ class ReceiptController extends Controller
         }
     }
 
-    /**
-     * Generate PDF response from HTML
-     */
+    /** Generate PDF Response */
     private function generatePdfResponse($html, $orderId, $action = 'view')
     {
         // Using dompdf library

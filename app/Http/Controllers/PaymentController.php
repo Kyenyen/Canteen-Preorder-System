@@ -21,9 +21,7 @@ class PaymentController extends Controller
         Stripe::setApiKey(config('stripe.secret'));
     }
 
-    /**
-     * Store a new payment (non-Stripe methods)
-     */
+    /** Store Payment */
     public function store(Request $request)
     {
         $request->validate([
@@ -70,9 +68,7 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Create a Stripe Payment Intent
-     */
+    /** Create Payment Intent */
     public function createPaymentIntent(Request $request)
     {
         $request->validate([
@@ -126,9 +122,7 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Confirm Stripe payment and create order + payment record
-     */
+    /** Confirm Stripe Payment */
     public function confirmStripePayment(Request $request)
     {
         $request->validate([
@@ -231,9 +225,7 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Handle Stripe webhooks
-     */
+    /** Handle Webhook */
     public function handleWebhook(Request $request)
     {
         $payload = $request->getContent();
@@ -276,9 +268,7 @@ class PaymentController extends Controller
         return response()->json(['status' => 'success']);
     }
 
-    /**
-     * Handle successful payment intent
-     */
+    /** Handle Payment Intent Succeeded */
     private function handlePaymentIntentSucceeded($paymentIntent)
     {
         $orderId = $paymentIntent->metadata->order_id ?? null;
@@ -301,9 +291,7 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Handle failed payment intent
-     */
+    /** Handle Payment Intent Failed */
     private function handlePaymentIntentFailed($paymentIntent)
     {
         $orderId = $paymentIntent->metadata->order_id ?? null;
@@ -323,9 +311,7 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Handle charge refunded
-     */
+    /** Handle Charge Refunded */
     private function handleChargeRefunded($charge)
     {
         $payment = Payment::where('stripe_charge_id', $charge->id)->first();
@@ -340,9 +326,7 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Process a refund for a Stripe payment
-     */
+    /** Refund Payment */
     public function refundPayment(Request $request, $paymentId)
     {
         $request->validate([

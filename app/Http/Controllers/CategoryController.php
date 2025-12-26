@@ -9,18 +9,14 @@ use Illuminate\Database\QueryException;
 
 class CategoryController extends Controller
 {
-    /**
-     * 1. Get All Categories.
-     */
+    /** Get All Categories */
     public function index()
     {
         // Retrieve all categories, perhaps ordered by name
         return response()->json(Category::orderBy('name')->get());
     }
 
-    /**
-     * 2. Get Single Category by ID.
-     */
+    /** Get Single Category */
     public function show($id)
     {
         return response()->json(
@@ -28,9 +24,7 @@ class CategoryController extends Controller
         );
     }
 
-    /**
-     * 3. Create New Category (Admin).
-     */
+    /** Create Category */
     public function store(Request $request)
     {
         // 3.1 Validation: Only the name is required from the user.
@@ -62,9 +56,7 @@ class CategoryController extends Controller
         return response()->json(['message' => 'Category created successfully', 'category' => $category], 201);
     }
 
-    /**
-     * 4. Update Category (Admin).
-     */
+    /** Update Category */
     public function updateCategory(Request $request, $id)
     {
         $category = Category::where('category_id', $id)->firstOrFail();
@@ -88,9 +80,7 @@ class CategoryController extends Controller
         return response()->json(['message' => 'Category updated successfully', 'category' => $category]);
     }
 
-    /**
-     * 5. Delete Category (Admin).
-     */
+    /** Delete Category */
     public function destroy($id)
     {
         $category = Category::where('category_id', $id)->firstOrFail();

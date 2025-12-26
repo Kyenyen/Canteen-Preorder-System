@@ -10,22 +10,20 @@ class Category extends Model
 {
     use HasFactory;
     
-    // Explicitly define the primary key and its type since it's 'char(5)'
+    /** Primary key configuration for char(5) type */
     protected $primaryKey = 'category_id';
     public $incrementing = false;
     protected $keyType = 'string';
-    public $timestamps = false; // Based on your migration, timestamps are excluded
+    public $timestamps = false;
 
+    /** Mass Assignable Attributes */
     protected $fillable = [
         'category_id',
         'name',
         'quantity',
     ];
 
-    /**
-     * Define the relationship with the Product model.
-     * A Category has many Products.
-     */
+    /** Relationship: Products in this Category */
     public function products(): HasMany
     {
         // The foreign key 'category_id' is on the Product model

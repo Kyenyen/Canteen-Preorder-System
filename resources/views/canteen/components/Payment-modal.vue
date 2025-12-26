@@ -186,7 +186,7 @@ const walletForm = reactive({
     pin: ''
 })
 
-// Computed UI Helpers
+// Computed Method Title
 const methodTitle = computed(() => {
     switch(props.paymentMethod) {
         case 'card': return 'Card';
@@ -197,6 +197,7 @@ const methodTitle = computed(() => {
     }
 })
 
+// Computed Method Icon
 const methodIcon = computed(() => {
     switch(props.paymentMethod) {
         case 'card': return 'fa-credit-card';
@@ -339,7 +340,7 @@ const processStripePayment = async () => {
     }
 }
 
-// Confirm Stripe payment on backend
+// Confirm Stripe Payment On Backend
 const confirmStripePaymentOnBackend = async () => {
     try {
         console.log('Confirming payment on backend:', {
@@ -371,16 +372,14 @@ const confirmStripePaymentOnBackend = async () => {
     }
 }
 
-// --- Input Formatters ---
-
-// Card: 0000 0000 0000 0000
+// Format Card Number
 const formatCardNumber = (e) => {
     let value = e.target.value.replace(/\D/g, '').substring(0, 16)
     value = value.match(/.{1,4}/g)?.join(' ') || value
     cardForm.number = value
 }
 
-// Expiry: MM/YY
+// Format Expiry
 const formatExpiry = (e) => {
     let value = e.target.value.replace(/\D/g, '')
     if (value.length >= 2) {
@@ -389,23 +388,25 @@ const formatExpiry = (e) => {
     cardForm.expiry = value
 }
 
-// Generic Number Only
+// Only Numbers
 const onlyNumbers = (field, max) => {
     let val = cardForm[field].replace(/\D/g, '')
     cardForm[field] = val.slice(0, max)
 }
 
+// Only Numbers Wallet
 const onlyNumbersWallet = (field, max) => {
     let val = walletForm[field].replace(/\D/g, '')
     walletForm[field] = val.slice(0, max)
 }
 
+// Format Phone
 const formatPhone = (e) => {
     // Just simple number filtering for phone
     walletForm.phone = e.target.value.replace(/\D/g, '')
 }
 
-// Check if returning from FPX redirect on component mount
+// On Mounted
 onMounted(async () => {
     const urlParams = new URLSearchParams(window.location.search)
     const paymentIntentClientSecret = urlParams.get('payment_intent_client_secret')
@@ -441,8 +442,7 @@ onMounted(async () => {
     }
 })
 
-// --- Actions ---
-
+// Close Modal
 const closeModal = () => {
     if (isLoading.value) return; // Prevent closing while processing
     
@@ -459,6 +459,7 @@ const closeModal = () => {
     emit('close')
 }
 
+// Process Payment
 const processPayment = async () => {
     // Basic Validation
     if (props.paymentMethod === 'card') {

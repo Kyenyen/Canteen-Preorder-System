@@ -7,16 +7,18 @@ export const useCartStore = defineStore('cart', () => {
     const items = ref([]);
     const loading = ref(false);
 
-    // Getters
+    // Total Items
     const totalItems = computed(() => items.value.reduce((sum, item) => sum + item.qty, 0));
+    
+    // Subtotal
     const subtotal = computed(() => items.value.reduce((sum, item) => sum + item.price * item.qty, 0));
 
-    // Helper to ensure CSRF cookie
+    // Ensure CSRF Cookie
     const ensureCsrfCookie = async () => {
         await axios.get('/sanctum/csrf-cookie');
     };
 
-    // Actions
+    // Fetch Cart
     async function fetchCart() {
         loading.value = true;
         try {
@@ -31,6 +33,7 @@ export const useCartStore = defineStore('cart', () => {
         }
     }
 
+    // Add Item
     async function addItem(product, quantity = 1) {
         const productId = product.product_id || product.id;
         
@@ -80,6 +83,7 @@ export const useCartStore = defineStore('cart', () => {
         }
     }
 
+    // Remove Item
     async function removeItem(productId) {
         // Optimistic update - remove from UI immediately
         const itemIndex = items.value.findIndex(i => i.id === productId);
@@ -102,6 +106,7 @@ export const useCartStore = defineStore('cart', () => {
         }
     }
 
+    // Update Quantity
     async function updateQuantity(productId, qty) {
         if (qty < 1) return;
         
@@ -127,6 +132,7 @@ export const useCartStore = defineStore('cart', () => {
         }
     }
 
+    // Clear Cart
     async function clearCart() {
         try {
             await axios.delete('/api/cart');

@@ -13,9 +13,7 @@ use Dompdf\Options;
 
 class SalesReportController extends Controller
 {
-    /**
-     * Get comprehensive sales report data with optional date filtering
-     */
+    /** Get Sales Report */
     public function getSalesReport(\Illuminate\Http\Request $request)
     {
         // Get optional date range parameters
@@ -187,9 +185,7 @@ class SalesReportController extends Controller
         ]);
     }
 
-    /**
-     * Generate PDF for sales report
-     */
+    /** Generate Sales Report PDF */
     public function generatePDF()
     {
         // Get total revenue (only paid orders, exclude cancelled)

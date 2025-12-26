@@ -194,10 +194,12 @@ const visibility = reactive({
     confirm: false
 })
 
+// Toggle Visibility
 const toggleVisibility = (field) => {
     visibility[field] = !visibility[field]
 }
 
+// Password Strength
 const passwordStrength = computed(() => {
   const p = pwd.new
   if (!p) return { score: 0, label: '', color: 'bg-gray-200' }
@@ -225,6 +227,7 @@ onMounted(async () => {
     }
 })
 
+// Get Avatar URL
 const getAvatarUrl = (path) => {
     if (!path) return null
     if (path.startsWith('http')) {
@@ -238,10 +241,12 @@ const getAvatarUrl = (path) => {
     return `/storage/${path}`
 }
 
+// Trigger File Input
 const triggerFileInput = () => {
     fileInput.value.click()
 }
 
+// Handle File Change
 const handleFileChange = (event) => {
     const file = event.target.files[0]
     if (file) {
@@ -250,6 +255,7 @@ const handleFileChange = (event) => {
     }
 }
 
+// Get Error Message
 const getErrorMessage = (err, defaultMsg) => {
     if (err.response && err.response.data && err.response.data.errors) {
         return Object.values(err.response.data.errors).flat().join('\n');
@@ -257,6 +263,7 @@ const getErrorMessage = (err, defaultMsg) => {
     return err.response?.data?.message || defaultMsg;
 }
 
+// Update Profile
 const updateProfile = async () => {
     profileLoading.value = true
     profileMsg.value = '' 
@@ -283,6 +290,7 @@ const updateProfile = async () => {
     }
 }
 
+// Change Password
 const changePassword = async () => {
     passwordMsg.value = '' 
 
@@ -312,6 +320,7 @@ const changePassword = async () => {
     }
 }
 
+// Show Message
 const showMsg = (section, message, type) => {
     if (section === 'profile') {
         profileMsg.value = message

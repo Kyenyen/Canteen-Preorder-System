@@ -33,7 +33,7 @@
         </div>
       </div>
 
-      <!-- Hero/Promo -->
+      <!-- Promo Card -->
       <div class="relative rounded-2xl overflow-hidden bg-gray-900 dark:bg-black text-white shadow-xl group">
         <div class="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 dark:from-orange-800 dark:to-red-900 opacity-90 group-hover:opacity-100 transition duration-500"></div>
         <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
@@ -60,7 +60,7 @@
       <!-- Quick Shortcuts -->
       <div class="grid gap-4" :class="isAdmin ? 'grid-cols-1' : 'grid-cols-2'">
         
-        <!-- Menu Button (Dynamic for Admin/User) -->
+        <!-- Menu Button -->
         <div
           @click="goToMenu"
           class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 hover:border-orange-200 dark:hover:border-orange-700 hover:shadow-md transition cursor-pointer group"
@@ -72,7 +72,7 @@
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ isAdmin ? 'Edit items & prices' : 'Browse all available items' }}</p>
         </div>
 
-        <!-- Order History (Hidden for Admin) -->
+        <!-- Order History -->
         <div
           v-if="!isAdmin"
           @click="$router.push('/history')"
@@ -117,8 +117,10 @@ import { useAuthStore } from '../../../js/stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
-// Check role
+// Is Admin
 const isAdmin = computed(() => authStore.user?.role === 'admin')
+
+// Greeting Message
 const greetingMessage = computed(() => `Welcome back, ${authStore.user?.username || 'User'}!`)
 
 // Initial State
@@ -130,6 +132,7 @@ const promo = ref({
 const popularItems = ref([])
 let pollingInterval = null
 
+// Go To Menu
 const goToMenu = () => {
     if (isAdmin.value) {
         router.push('/admin/menu')
@@ -138,23 +141,24 @@ const goToMenu = () => {
     }
 }
 
+// Fetch Home Data
 const fetchHomeData = async () => {
   try {
     const response = await axios.get('/api/home-data')
     
-    // 1. Update Active Order (clear if not returned)
+    // Active Order
     if (response.data.activeOrder) {
         activeOrder.value = response.data.activeOrder
     } else {
         activeOrder.value = null
     }
 
-    // 2. Update Popular Items
+    // Popular Items
     if (response.data.popularItems) {
         popularItems.value = response.data.popularItems
     }
 
-    // 3. Update Promo (Fix for "didn't change")
+    // Promo
     if (response.data.promo) {
         promo.value = response.data.promo
     }
@@ -172,7 +176,7 @@ const fetchHomeData = async () => {
 onMounted(() => {
   fetchHomeData()
   
-  // Poll for active order updates every 5 seconds (only for non-admin users)
+  // Poll for active order updates every 5 seconds
   if (!isAdmin.value) {
     pollingInterval = setInterval(() => {
       fetchHomeData()

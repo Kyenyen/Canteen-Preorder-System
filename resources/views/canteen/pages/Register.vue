@@ -179,6 +179,7 @@ watch(email, () => {
   }
 })
 
+// Password Strength
 const passwordStrength = computed(() => {
   const p = password.value
   if (!p) return { score: 0, label: '', color: 'bg-gray-200' }
@@ -196,6 +197,7 @@ const passwordStrength = computed(() => {
   return { score: 4, label: 'Strong', color: 'bg-green-500' }
 })
 
+// Toggle Password
 const togglePassword = () => {
   showPassword.value = !showPassword.value
 }
@@ -218,10 +220,12 @@ onMounted(() => {
   }, 500);
 });
 
+// Is Valid Email
 const isValidEmail = computed(() => {
   return /@student\.tarc\.edu\.my$|@tarc\.edu\.my$/i.test(email.value)
 })
 
+// Send OTP
 const sendOtp = async () => {
   if (!isValidEmail.value) {
     errorMessage.value = "Invalid TARC email format."
@@ -251,6 +255,7 @@ const sendOtp = async () => {
   }
 }
 
+// Verify OTP
 const verifyOtp = async () => {
   if (!otpInput.value) return
 
@@ -271,6 +276,7 @@ const verifyOtp = async () => {
   }
 }
 
+// Start Timer
 const startTimer = (seconds) => {
   timer.value = seconds
   clearInterval(timerInterval)
@@ -283,6 +289,7 @@ const startTimer = (seconds) => {
   }, 1000)
 }
 
+// Handle Register
 const handleRegister = async () => {
   errorMessage.value = ''
   successMessage.value = ''

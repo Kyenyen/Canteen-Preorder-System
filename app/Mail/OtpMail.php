@@ -10,19 +10,16 @@ class OtpMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /** One-time password for email verification */
     public $otp;
 
-    /**
-     * Create a new message instance.
-     */
+    /** Create New OTP Email Instance */
     public function __construct($otp)
     {
         $this->otp = $otp;
     }
 
-    /**
-     * Build the message.
-     */
+    /** Build OTP Email Message */
     public function build()
     {
         return $this->subject('Verify Your Email - UniCanteen')

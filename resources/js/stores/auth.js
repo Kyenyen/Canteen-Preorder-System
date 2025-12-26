@@ -8,10 +8,12 @@ export const useAuthStore = defineStore('auth', {
   }),
   
   actions: {
+    // Register
     async register(payload) {
       return axios.post('/api/register', payload)
     },
 
+  // Login
   async login(payload) {
       const res = await axios.post('/api/login', payload)
       
@@ -24,6 +26,7 @@ export const useAuthStore = defineStore('auth', {
       axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
     },
 
+    // Logout
     logout() {
       this.user = null
       this.token = null

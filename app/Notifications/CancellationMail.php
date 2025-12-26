@@ -12,27 +12,22 @@ class CancellationMail extends Notification
 {
     use Queueable;
 
+    /** Cancelled order details */
     protected Order $order;
 
-    /**
-     * Create a new notification instance.
-     */
+    /** Create New Customer Cancellation Notification */
     public function __construct(Order $order)
     {
         $this->order = $order;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     */
+    /** Get Notification Delivery Channels */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
+    /** Build Customer Cancellation Email */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)

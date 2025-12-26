@@ -146,6 +146,7 @@ const cartStore = useCartStore()
 const toggleCart = inject('toggleCart')
 const notification = inject('notificationState')
 
+// Fetch Menu
 const fetchMenu = async () => {
   try {
     const response = await axios.get('/api/menu')
@@ -170,7 +171,7 @@ onUnmounted(() => {
   }
 })
 
-// Dynamic Categories Calculation
+// Categories
 const categories = computed(() => {
     const cats = new Set(['All'])
     menuItems.value.forEach(item => {
@@ -182,7 +183,7 @@ const categories = computed(() => {
     return Array.from(cats)
 })
 
-// UPDATED: Filter by Category AND Search Query
+// Filtered Menu
 const filteredMenu = computed(() => {
     let items = menuItems.value
 
@@ -206,14 +207,17 @@ const filteredMenu = computed(() => {
     return items
 })
 
+// Filter Menu
 const filterMenu = (cat) => {
     currentCategory.value = cat
 }
 
+// Is In Cart
 const isInCart = (productId) => {
   return cartStore.items.some(item => item.id === productId)
 }
 
+// Get Cart Quantity
 const getCartQuantity = (productId) => {
   if (pendingUpdates.value[productId] !== undefined) {
     return pendingUpdates.value[productId]
@@ -222,6 +226,7 @@ const getCartQuantity = (productId) => {
   return cartItem ? cartItem.qty : 0
 }
 
+// Update Quantity Debounced
 const updateQuantityDebounced = (productId, newQty) => {
   if (updateTimeouts.value[productId]) {
     clearTimeout(updateTimeouts.value[productId])
@@ -249,6 +254,7 @@ const updateQuantityDebounced = (productId, newQty) => {
   }
 }
 
+// Increment Quantity
 const incrementQty = async (productId) => {
   const currentQty = getCartQuantity(productId)
   const newQty = currentQty + 1
@@ -262,6 +268,7 @@ const incrementQty = async (productId) => {
   updateQuantityDebounced(productId, newQty)
 }
 
+// Decrement Quantity
 const decrementQty = async (productId) => {
   const currentQty = getCartQuantity(productId)
   
@@ -292,6 +299,7 @@ const decrementQty = async (productId) => {
   }
 }
 
+// Show Notification
 const showNotification = (type, title, message = '') => {
   notification.value = {
     show: true,
@@ -301,6 +309,7 @@ const showNotification = (type, title, message = '') => {
   }
 }
 
+// Add To Cart
 const addToCart = async (item) => {
   try {
     await cartStore.addItem(item, 1)
@@ -312,11 +321,13 @@ const addToCart = async (item) => {
   }
 }
 
+// Get Photo URL
 const getPhotoUrl = (path) => {
     if (!path) return null
     return path.startsWith('http') ? path : `/${path}`
 }
 
+// Open Product Details
 const openProductDetails = (item) => {
   selectedProduct.value = {
     id: item.product_id,
@@ -333,11 +344,13 @@ const openProductDetails = (item) => {
   isProductModalOpen.value = true
 }
 
+// Close Product Details
 const closeProductDetails = () => {
   isProductModalOpen.value = false
   selectedProduct.value = null
 }
 
+// Handle Add From Modal
 const handleAddFromModal = async (data) => {
   try {
     const item = menuItems.value.find(i => i.product_id === data.product.id)
